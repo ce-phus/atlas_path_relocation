@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+python3 manage.py makemigrations user --no-input || echo "Failed to create user migrations, continuing..."
+
+python3 manage.py makemigrations --no-input
+
+python3 manage.py migrate --no-input
+
+python3 manage.py collectstatic --no-input
+
+# Start Django with OpenTelemetry instrumentation
+opentelemetry-instrument \
+  --traces_exporter otlp \
+  --metrics_exporter otlp \
+  --exporter_otlp_endpoint http://otel-collector:4317 \
+  python3 manage.py runserver 0.0.0.0:8000

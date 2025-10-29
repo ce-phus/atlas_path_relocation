@@ -1,0 +1,40 @@
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: ./docker/local/django/Dockerfile
+    command: /start
+    volumes:
+      - ./backend:/django_app
+      - ./backend/templates:/django_app/templates
+      - static_volume:/usr/share/nginx/html/staticfiles
+      - media_volume:/usr/share/nginx/html/mediafiles
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - atlaspath-db
+    networks:
+      - atlaspath-network
+    environment:
+      - TZ=Africa/Nairobi
+
+  atlaspath-db:
+    image: postgres:16.0
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./backend/.env
+    networks:
+      - atlaspath-network
+    environment:
+      - TZ=Africa/Nairobi
+
+networks:
+  atlaspath-network:
+    driver: bridge
+
+volumes:
+  static_volume:
+  media_volume:

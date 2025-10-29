@@ -51,17 +51,9 @@ PAYSTACK_PLANS = {
 }
 
 
-CELERY_BEAT_SCHEDULE = {
-    'process_recurring_billing': {
-        'task': 'apps.billing.tasks.process_recurring_billing',
-        'schedule': crontab(minute='*/1'),
-    },
-    # 'update_business_metrics-5-minutes': {
-    #     'task': 'apps.common.tasks.update_business_metrics_task',
-    #     'schedule': crontab(minute='*/5'),  # Every 5 minutes
-    # },
-    # 'update_business_metrics-hourly': {
-    #     'task': 'apps.common.tasks.update_business_metrics_task',
-    #     'schedule': crontab(minute='0'),  # Every hour at :00
-    # },
-}
+# CELERY_BEAT_SCHEDULE = {
+#     'process_recurring_billing': {
+#         'task': 'apps.billing.tasks.process_recurring_billing',
+#         'schedule': crontab(minute='*/1'),
+#     },
+# }

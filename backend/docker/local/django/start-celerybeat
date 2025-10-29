@@ -1,0 +1,2 @@
+#!/bin/bash
+exec celery -A real_estate.celery_app beat -l info 

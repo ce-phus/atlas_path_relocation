@@ -4,22 +4,18 @@ from datetime import timedelta
 
 env = environ.Env(DEBUG=(bool, False))
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+environ.Env.read_env(BASE_DIR / ".env")
+env_path = BASE_DIR / ".env"
 
+print(f"Looking for .env at: {env_path}")
+print(f".env file exists: {env_path.exists()}")
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-&tys2fb=gs^379gsxghf^_3txz#u(!e1+u=r+$)x(rc_ei0_yi'
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
-
-# Application definition
 
 THIRD_PARTY_APPS = [
     'rest_framework',
@@ -45,7 +41,8 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
-    "apps.users",
+    "apps.chat",
+    'apps.users',
 ]
 
 DJANGO_APPS = [
@@ -53,7 +50,6 @@ DJANGO_APPS = [
     'django.contrib.sites', 
     'django.contrib.contenttypes',
     'django.contrib.admin',
-    'apps.users',
     'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.messages',
@@ -64,21 +60,23 @@ DJANGO_APPS = [
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
-
 ROOT_URLCONF = 'backend.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR /  'templates' ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -91,18 +89,15 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend.wsgi.application'
+# WSGI_APPLICATION = 'backend.wsgi.application'
+ASGI_APPLICATION = 'backend.asgi.application'
 
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+
+AUTH_USER_MODEL = "users.User"
 
 
 # Password validation
@@ -129,7 +124,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Nairobi'
 
 USE_I18N = True
 
@@ -139,9 +134,63 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+FILE_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024 
+DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024 
+STATIC_URL = "/staticfiles/"
+STATIC_ROOT = "/usr/share/nginx/html/staticfiles/"
+STATICFILES_DIRS = []
+MEDIA_URL = "/mediafiles/"
+MEDIA_ROOT = "/usr/share/nginx/html/mediafiles/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SIMPLE_JWT = {
+    "AUTH_HEADER_TYPES": (
+        "Bearer",
+        "JWT",
+    ),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=31),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+}
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DJOSER = {
+    "LOGIN_FIELD": "email",
+    "USER_CREATE_PASSWORD_RETYPE": True,
+    "USERNAME_CHANGED_EMAIL_CONFIRMATION": True,
+    "PASSWORD_CHANGED_EMAIL_CONFIRMATION": True,
+    "SEND_CONFIRMATION_EMAIL": True,
+    "PASSWORD_RESET_CONFIRM_URL": "password/reset/confirm/{uid}/{token}",
+    "SET_PASSWORD_RETYPE": True,
+    "PASSWORD_RESET_CONFIRM_RETYPE": True,
+    "USERNAME_RESET_CONFIRM_URL": "email/reset/confirm/{uid}/{token}",
+    "ACTIVATION_URL": "activate/{uid}/{token}",
+    "SEND_ACTIVATION_EMAIL": True,
+    'EMAIL': {
+        'activation': 'apps.users.core.CustomActivationEmail',
+        'confirmation': 'apps.users.core.CustomConfirmationEmail',
+        'password_reset': 'apps.users.core.CustomPasswordResetEmail',
+        'password_changed_confirmation': 'apps.users.core.CustomPasswordChangedConfirmationEmail',
+
+    },
+    "SERIALIZERS": {
+        "user_create": "apps.users.serializers.CreateUserSerializer",
+        "user": "apps.users.serializers.UserSerializer",
+        "current_user": "apps.users.serializers.UserSerializer",
+        "user_delete": "djoser.serializers.UserDeleteSerializer",
+        "set_password": "apps.users.serializers.CustomSetPasswordSerializer",
+    },
+    "OLD_PASSWORD_FIELD_ENABLED": False, 
+} 
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:8080",
+]
+
+CORS_ALLOW_CREDENTIALS = True 

@@ -1,0 +1,103 @@
+{% load i18n %}
+
+{% block subject %}
+{% blocktrans %}Account activation on {{ site_name }}{% endblocktrans %}
+{% endblock subject %}
+
+{% block text_body %}
+{% blocktrans %}Hello {{ user.first_name }},{% endblocktrans %}
+
+{% blocktrans %}You're receiving this email because you need to finish the activation process on {{ site_name }}.{% endblocktrans %}
+
+{% trans "Please go to the following page to activate your account:" %}
+{{ protocol }}://{{ domain }}/activate/{{ uid }}/{{ token }}
+
+{% trans "Thanks for using our site!" %}
+
+{% blocktrans %}The {{ site_name }} team{% endblocktrans %}
+{% endblock text_body %}
+
+{% block html_body %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% blocktrans %}Account activation on {{ site_name }}{% endblocktrans %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .logo {
+            max-width: 150px;
+            height: auto;
+            display: block;
+            margin: 0 auto 20px;
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 0;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .fallback-link {
+            word-break: break-all;
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p>
+            <img class="logo" src="https://mycrib.app/static/src/logo/mycrib1.png" alt="MyCrib logo">
+        </p>
+        <p>{% blocktrans %}Hello {{ user.first_name }},{% endblocktrans %}</p>
+        <p>{% blocktrans %}Welcome to <strong>{{ site_name }}</strong>! You're receiving this email because you need to finish the activation process.{% endblocktrans %}</p>
+        <p>{% trans "Please click the button below to activate your account:" %}</p>
+        <p>
+            <a href="{{ protocol }}://{{ domain }}/activate/{{ uid }}/{{ token }}" class="button">
+                {% trans "Activate Account" %}
+            </a>
+        </p>
+        <p>{% trans "If the button doesn't work, copy and paste this link into your browser:" %}</p>
+        <p>
+            <a href="{{ protocol }}://{{ domain }}/activate/{{ uid }}/{{ token }}" class="fallback-link">
+                {{ protocol }}://{{ domain }}/activate/{{ uid }}/{{ token }}
+            </a>
+        </p>
+        <p>{% trans "Thanks for using our site!" %}</p>
+        <p class="footer">{% blocktrans %}The {{ site_name }} team{% endblocktrans %}</p>
+    </div>
+</body>
+</html>
+{% endblock html_body %}
