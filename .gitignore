@@ -20,8 +20,6 @@ backend/real_estate/logs
 backend/real_estate/real_estate/logs
 backend/real_estate/real_estate/real_estate
 
-backend/docker/local/nginx
-
 # testing
 /coverage
 

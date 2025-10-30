@@ -31,6 +31,47 @@ services:
     environment:
       - TZ=Africa/Nairobi
 
+  client-dev:
+    build:
+      context: ./client-vite
+      dockerfile: ./docker/local/Dockerfile
+    command: npm run dev
+    volumes:
+      - ./client-vite:/app
+      - /app/node_modules
+      - vite_cache:/app/node_modules/.vite
+    ports:
+      - "5173:5173"
+    networks:
+      - atlaspath-network
+    environment:
+      - TZ=Africa/Nairobi
+
+  redis:
+    image: redis:7.2.4
+    networks:
+      - atlaspath-network
+    environment:
+      - TZ=Africa/Nairobi
+  
+  nginx:
+    restart: always
+    depends_on:
+      - api
+    volumes:
+      - static_volume:/usr/share/nginx/html/staticfiles
+      - media_volume:/usr/share/nginx/html/mediafiles
+      - ./client-vite/dist:/usr/share/nginx/html
+    build:
+      context: ./backend/docker/local/nginx
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
+    networks:
+      - atlaspath-network
+    environment:
+      - TZ=Africa/Nairobi
+
 networks:
   atlaspath-network:
     driver: bridge
@@ -38,3 +79,4 @@ networks:
 volumes:
   static_volume:
   media_volume:
+  vite_cache:
