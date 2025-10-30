@@ -43,6 +43,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "apps.chat",
     'apps.users',
+    "apps.profiles",
 ]
 
 DJANGO_APPS = [
