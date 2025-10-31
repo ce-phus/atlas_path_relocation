@@ -131,6 +131,17 @@ USE_I18N = True
 
 USE_TZ = True
 
+SITE_ID = 1
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'  # Skip email verification for social logins
+SOCIALACCOUNT_AUTO_SIGNUP = True  # Automatically sign up users if their email matches
+SOCIALACCOUNT_LOGIN_ON_GET = True  # Allow GET requests for social login redirects
+HEADLESS_ONLY=True
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -192,6 +203,11 @@ DJOSER = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:8080",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',
+    'http://localhost:8080',
 ]
 
 CORS_ALLOW_CREDENTIALS = True 

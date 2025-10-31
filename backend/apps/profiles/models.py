@@ -62,7 +62,10 @@ class Consultant(TimeStampedUUIDModel):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Consultant: {self.user.email} - {self.employee_id} - {self.user.get_full_name()}"
+        if self.user and hasattr(self.user, 'get_full_name'):
+            full_name = self.user.get_full_name()
+            return f"Consultant: {self.user.email} - {self.employee_id} - {full_name}"
+        return f"Consultant: {self.employee_id}"
 
 class Profile(TimeStampedUUIDModel):
     user = models.OneToOneField(
@@ -230,15 +233,18 @@ class Profile(TimeStampedUUIDModel):
     )
 
     def __str__(self):
-        return f"Profile: {self.user.get_full_name()} - {self.relocation_type}"
-    
+        if self.user and hasattr(self.user, 'get_full_name'):
+            full_name = self.user.get_full_name()
+            return f"Profile: {full_name} - {self.relocation_type}"
+        return f"Profile: {self.user.email if self.user else 'No User'}"
+        
     def get_consultant_employee_id(self):
         if self.relocation_consultant:
             return self.relocation_consultant.employee_id
         return "No Consultant Assigned"
     
     def get_consultant_name(self):
-        if self.relocation_consultant:
+        if self.relocation_consultant and self.relocation_consultant.user:
             return self.relocation_consultant.user.get_full_name()
         return "No Consultant Assigned"
     
@@ -281,7 +287,10 @@ class Document(TimeStampedUUIDModel):
     )
 
     def __str__(self):
-        return f"Document: {self.document_type} for {self.profile.user.get_full_name()}"
+        if self.profile and self.profile.user and hasattr(self.profile.user, 'get_full_name'):
+            full_name = self.profile.user.get_full_name()
+            return f"Document: {self.document_type} for {full_name}"
+        return f"Document: {self.document_type}"
     
 class Task(TimeStampedUUIDModel):
     profile = models.ForeignKey(
@@ -308,4 +317,7 @@ class Task(TimeStampedUUIDModel):
     )
 
     def __str__(self):
-        return f"Task: {self.title} for {self.profile.user.get_full_name()}"
+        if self.profile and self.profile.user and hasattr(self.profile.user, 'get_full_name'):
+            full_name = self.profile.user.get_full_name()
+            return f"Task: {self.title} for {full_name}"
+        return f"Task: {self.title}"

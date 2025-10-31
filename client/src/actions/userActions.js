@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL 
+console.log("API URL: ", API_URL)
 
 // login
 
@@ -60,6 +61,9 @@ try {
         password, 
         re_password 
     }, config);
+
+    console.log("Data: ", data)
+    console.log(API_URL)
 
     dispatch({
         type: "USER_REGISTER_SUCCESS",

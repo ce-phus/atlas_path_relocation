@@ -15,6 +15,7 @@ services:
       - ./backend/.env
     depends_on:
       - atlaspath-db
+      - redis
     networks:
       - atlaspath-network
     environment:
@@ -71,15 +72,27 @@ services:
 
   redis:
     image: redis:7.2.4
+
     networks:
       - atlaspath-network
     environment:
       - TZ=Africa/Nairobi
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
   
   nginx:
     restart: always
     depends_on:
       - api
+      - flower
     volumes:
       - static_volume:/usr/share/nginx/html/staticfiles
       - media_volume:/usr/share/nginx/html/mediafiles
@@ -120,3 +133,4 @@ volumes:
   static_volume:
   media_volume:
   vite_cache:
+  redis_data:

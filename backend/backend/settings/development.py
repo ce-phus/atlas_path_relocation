@@ -8,8 +8,8 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
 EMAIL_PORT = env("EMAIL_PORT")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
 DOMAIN = env("DOMAIN")
-# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_BACKEND = "djcelery_email.backends.CeleryEmailBackend"
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# EMAIL_BACKEND = "djcelery_email.backends.CeleryEmailBackend"
 
 # DATABASES = {
 #     'default': {
@@ -33,6 +33,11 @@ CELERY_BROKER_URL = env("CELERY_BROKER")
 CELERY_RESULT_BACKEND = env("CELERY_BACKEND")
 CELERY_TIMEZONE = "Africa/Nairobi"
 FLOWER_BASIC_AUTH = env("FLOWER_BASIC_AUTH")
+
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_CONNECTION_RETRY = True
+CELERY_BROKER_HEARTBEAT = 10
+CELERY_BROKER_POOL_LIMIT = None
 
 CACHES = {
     "default": {

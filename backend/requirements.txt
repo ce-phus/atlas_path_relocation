@@ -47,6 +47,7 @@ djangorestframework==3.15.2
 djangorestframework-simplejwt==5.3.1
 django-celery-beat==2.8.1
 django-prometheus==2.4.1
+django-redis==6.0.0
 djoser==2.2.3
 environs==11.0.0
 Faker==33.3.0

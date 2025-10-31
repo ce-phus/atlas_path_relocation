@@ -7,7 +7,7 @@ from django.db.models.signals import m2m_changed, pre_save
 User = get_user_model() 
 
 @receiver(post_save, sender=User)
-def create_user_profile(sener, instance, created, **kwargs):
+def create_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
 
