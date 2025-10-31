@@ -1,17 +1,16 @@
-ARG NODE_VERSION=22.0
+FROM node:22.0 as dependencies
 
-FROM node:${NODE_VERSION} as node
+WORKDIR /app
 
-FROM node as client-local-build
+COPY package*.json ./
+RUN npm ci --only=production --legacy-peer-deps
 
-ARG APP_HOME=/app
+FROM node:22.0 as build
 
-WORKDIR ${APP_HOME}
+WORKDIR /app
 
-COPY ./package*.json .
-
+COPY package*.json ./
 RUN npm install --legacy-peer-deps
 
-COPY . ${APP_HOME}
-
+COPY . .
 RUN npm run build

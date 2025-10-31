@@ -1,10 +1,10 @@
 from django.db import models
-from apps.common.models import TimeStampedModel
+from apps.common.models import TimeStampedUUIDModel
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
 from django_countries.fields import CountryField
 
-class Consultant(TimeStampedModel):
+class Consultant(TimeStampedUUIDModel):
     user = models.OneToOneField(
         'users.User',
         on_delete=models.CASCADE,
@@ -64,7 +64,7 @@ class Consultant(TimeStampedModel):
     def __str__(self):
         return f"Consultant: {self.user.email} - {self.employee_id} - {self.user.get_full_name()}"
 
-class Profile(TimeStampedModel):
+class Profile(TimeStampedUUIDModel):
     user = models.OneToOneField(
         'users.User',
         on_delete=models.CASCADE,
@@ -243,7 +243,7 @@ class Profile(TimeStampedModel):
         return "No Consultant Assigned"
     
 
-class Document(TimeStampedModel):
+class Document(TimeStampedUUIDModel):
     profile = models.ForeignKey(
         Profile,
         on_delete=models.CASCADE,
@@ -283,7 +283,7 @@ class Document(TimeStampedModel):
     def __str__(self):
         return f"Document: {self.document_type} for {self.profile.user.get_full_name()}"
     
-class Task(TimeStampedModel):
+class Task(TimeStampedUUIDModel):
     profile = models.ForeignKey(
         Profile,
         on_delete=models.CASCADE,

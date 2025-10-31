@@ -21,7 +21,7 @@ class ConsultantViewset(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ["specialization", "country", "availability_status", "is_active"]
     search_fields = ["user__first_name", "user__last_name", "employee_id", "bio", "expertise"]
-    ordering_fiewlds = ["years_experience", "current_client_count", "created_at"]
+    ordering_fields = ["years_of_experience", "current_client_count", "created_at"]
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -31,25 +31,22 @@ class ConsultantViewset(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.request.user.is_staff:
             return self.queryset
-        # For non-staff users, return only active consultants
         return self.queryset.filter(is_active=True, availability_status="available")
     
-    @action(detail=False, methods=["get"])
+    @action(detail=True, methods=["post"])
     def update_availability(self, request, pk=None):
         consultant = self.get_object()
-        new_status = request.data.get("availabilty_status")
+        new_status = request.data.get("availability_status")
 
-        if new_status in dict(Consultant.AVAILABLE_CHOICES):
+        if new_status in dict(Consultant.AVAILABLE_CHOICES): 
             consultant.availability_status = new_status
             consultant.save()
             return Response({"status": "availability updated"}, status=status.HTTP_200_OK)
         return Response({"error": "invalid status"}, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(details=False, methods=["get"])
+    @action(detail=False, methods=["get"]) 
     def available_consultants(self, request):
-        available_consultants = self.queryset.filter(
-            is_active=True,
-            availability_status="available",
+        available_consultants = self.get_queryset().filter( 
             current_client_count__lt=models.F('max_clients')
         )
         serializer = self.get_serializer(available_consultants, many=True)

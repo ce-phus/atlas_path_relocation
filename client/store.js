@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
-import metricsMiddleware from "../src/middleware/metricsmiddleware"
-import allReducers from './reducers/index';
+// import metricsMiddleware from "../src/middleware/metricsmiddleware"
+import allReducers from "./src/reducers/index"
 
 const userInfoFromStorage = typeof window !== 'undefined'
   ? JSON.parse(localStorage.getItem('userInfo'))
@@ -8,8 +8,7 @@ const userInfoFromStorage = typeof window !== 'undefined'
 
 const store = configureStore({
   reducer: allReducers,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(metricsMiddleware),
+  
   preloadedState: {
     userLoginReducer: {
       userInfo: userInfoFromStorage,

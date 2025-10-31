@@ -9,8 +9,8 @@ services:
       - ./backend/templates:/django_app/templates
       - static_volume:/usr/share/nginx/html/staticfiles
       - media_volume:/usr/share/nginx/html/mediafiles
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     env_file:
       - ./backend/.env
     depends_on:
@@ -33,11 +33,11 @@ services:
 
   client-dev:
     build:
-      context: ./client-vite
+      context: ./client
       dockerfile: ./docker/local/Dockerfile
     command: npm run dev
     volumes:
-      - ./client-vite:/app
+      - ./client:/app
       - /app/node_modules
       - vite_cache:/app/node_modules/.vite
     ports:
@@ -61,7 +61,7 @@ services:
     volumes:
       - static_volume:/usr/share/nginx/html/staticfiles
       - media_volume:/usr/share/nginx/html/mediafiles
-      - ./client-vite/dist:/usr/share/nginx/html
+      - ./client/dist:/usr/share/nginx/html
     build:
       context: ./backend/docker/local/nginx
       dockerfile: Dockerfile

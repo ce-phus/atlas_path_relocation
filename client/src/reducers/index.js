@@ -6,7 +6,7 @@ import {
     userActivateReducer,
     userResetPasswordConfirmReducer,
     userResetPasswordReducer,
-} from "./userReducer";
+} from "./userReducers";
 
 const allReducers = combineReducers({
     userLoginReducer,

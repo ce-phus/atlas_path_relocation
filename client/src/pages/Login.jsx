@@ -1,8 +1,20 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { logo } from '../assets'
+import { useDispatch, useSelector } from 'react-redux'
+import { login } from '../actions/userActions'
 
 const Login = () => {
+
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.userLoginReducer);
+  const [email, setUserEmail] = useState('');
+  const [password, setUserPassword] = useState('');
+
+  const handleSubmit = (e) => {
+    dispatch(login(email, password));
+  }
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -76,7 +88,6 @@ const Login = () => {
       initial="hidden"
       animate="visible"
     >
-      {/* Floating Background Elements */}
       <motion.div 
         className="absolute w-72 h-72 rounded-full bg-[#1F1C7A]/20 blur-xl"
         style={{ top: '20%', left: '10%' }}
@@ -92,14 +103,12 @@ const Login = () => {
         }}
       />
 
-      {/* Glassmorphism Login Form */}
       <motion.div 
         className='bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl p-8 w-full max-w-md relative overflow-hidden'
         variants={formVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* Animated Background Glow */}
         <motion.div 
           className="absolute -inset-1 bg-gradient-to-r from-[#1F1C7A]/30 to-[#1F1C7A]/10 rounded-2xl blur-sm"
           animate={{
@@ -113,7 +122,6 @@ const Login = () => {
         />
         
         <div className="relative z-10">
-          {/* Form Header */}
           <motion.div 
             className='text-center mb-8'
             initial={{ opacity: 0, y: -20 }}
@@ -128,9 +136,7 @@ const Login = () => {
             <p className='text-black/70 font-light'>Sign in to your account</p>
           </motion.div>
 
-          {/* Login Form */}
-          <form className='space-y-6'>
-            {/* Email Input */}
+          <form className='space-y-6' onSubmit={handleSubmit}>
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -145,11 +151,12 @@ const Login = () => {
                 className='w-full px-4 py-3 bg-black/10 border border-black/20 rounded-lg text-black placeholder-black/40 focus:outline-none transition-all duration-200 backdrop-blur-sm'
                 placeholder='Enter your email'
                 variants={inputVariants}
+                value={email}
+                onChange={(e) => setUserEmail(e.target.value)}
                 whileFocus="focus"
               />
             </motion.div>
 
-            {/* Password Input */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -163,12 +170,13 @@ const Login = () => {
                 id='password'
                 className='w-full px-4 py-3 bg-black/5 border border-black/20 rounded-lg text-black placeholder-black/40 focus:outline-none transition-all duration-200 backdrop-blur-sm'
                 placeholder='Enter your password'
+                value={password}
+                onChange={(e) => setUserPassword(e.target.value)}
                 variants={inputVariants}
                 whileFocus="focus"
               />
             </motion.div>
 
-            {/* Remember Me & Forgot Password */}
             <motion.div 
               className='flex items-center justify-between'
               initial={{ opacity: 0 }}
@@ -196,19 +204,36 @@ const Login = () => {
               </motion.a>
             </motion.div>
 
-            {/* Submit Button */}
             <motion.button
-              type='submit'
-              className='w-full bg-[#1F1C7A] text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 backdrop-blur-sm border border-[#1F1C7A]/30'
-              variants={buttonVariants}
-              initial="initial"
-              whileHover="hover"
-              whileTap="tap"
-            >
-              Sign In
-            </motion.button>
+                type='submit'
+                className='w-full bg-[#1F1C7A] text-white py-3 px-4 rounded-xl cursor-pointer font-semibold transition-all duration-200 backdrop-blur-sm border border-[#1F1C7A]/30 mt-6 flex items-center justify-center min-h-[48px]'
+                variants={buttonVariants}
+                initial="initial"
+                whileHover="hover"
+                whileTap="tap"
+                >
+                {loading ? (
+                    <svg 
+                    className="animate-spin h-5 w-5 mx-auto" 
+                    viewBox="0 0 24 24"
+                    >
+                    <circle 
+                        cx="12" 
+                        cy="12" 
+                        r="10" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        fill="none" 
+                        strokeLinecap="round"
+                        strokeDasharray="40 100"
+                        className="text-white opacity-60"
+                    />
+                    </svg>
+                ) : (
+                    'Sign In'
+                )}
+                </motion.button>
 
-            {/* Sign Up Link */}
             <motion.div 
               className='text-center'
               initial={{ opacity: 0 }}
@@ -218,7 +243,7 @@ const Login = () => {
               <p className='text-black/70 text-sm font-light'>
                 Don't have an account?{' '}
                 <motion.a 
-                  href='#' 
+                  href='/sign-up' 
                   className='text-black font-medium hover:text-black/80 transition-colors duration-200'
                   whileHover={{ scale: 1.05, color: "#1F1C7A" }}
                   whileTap={{ scale: 0.95 }}

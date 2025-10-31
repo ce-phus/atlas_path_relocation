@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from .models import Profile, Consultant, Document, Task
-from django.conf import settings
+from django.contrib.auth import get_user_model
 
-User = settings.AUTH_USER_MODEL
+User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
