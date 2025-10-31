@@ -3,8 +3,9 @@
 set -o errexit
 set -o nounset
 
-watchmedo auto-restart -d /django_app/real_estate/ -p "*.py" -- celery -A real_estate worker --loglevel=info
 
-watchmedo auto-restart -d /django_app/real_estate/ -p "*.py" -- celery -A real_estate.celery_app beat -l info  
+watchmedo auto-restart -d /django_app/backend/ -p "*.py" -- celery -A backend.celery_app worker --loglevel=info
+
+watchmedo auto-restart -d /django_app/backend/ -p "*.py" -- celery -A backend.celery_app beat -l info  
 
 

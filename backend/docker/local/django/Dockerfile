@@ -11,7 +11,7 @@ LABEL description="Development image for Atlas Path Application"
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-ENV PYTHONPATH="${APP_HOME}/atlas_path:${PYTHONPATH}" 
+ENV PYTHONPATH="${APP_HOME}/backend:${PYTHONPATH}" 
 
 RUN apt-get update \
   && apt-get install -y build-essential \

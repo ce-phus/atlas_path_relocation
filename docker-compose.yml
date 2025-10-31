@@ -20,6 +20,28 @@ services:
     environment:
       - TZ=Africa/Nairobi
 
+  flower:
+    build:
+      context: ./backend
+      dockerfile: ./docker/local/django/Dockerfile
+    command: /start-flower
+    volumes:
+      - ./backend:/django_app
+      - media_volume:/usr/share/nginx/html/mediafiles
+    env_file:
+      - ./backend/.env
+    ports:
+      - "127.0.0.1:5557:5555"
+    depends_on:
+      - redis
+      - atlaspath-db
+      - celery_worker
+    networks:
+      - atlaspath-network
+    environment:
+      - TZ=Africa/Nairobi
+      - FLOWER_BASIC_AUTH=admin:admin1234
+
   atlaspath-db:
     image: postgres:16.0
     ports:
@@ -71,6 +93,24 @@ services:
       - atlaspath-network
     environment:
       - TZ=Africa/Nairobi
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: ./docker/local/django/Dockerfile
+    command: /start-celeryworker
+    volumes:
+      - ./backend:/django_app
+      - media_volume:/usr/share/nginx/html/mediafiles 
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - redis
+      - atlaspath-db
+    networks:
+      - atlaspath-network
+    environment:
+      - TZ=Africa/Nairobi
+
 
 networks:
   atlaspath-network:
