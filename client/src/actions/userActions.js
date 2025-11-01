@@ -3,8 +3,6 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL 
 console.log("API URL: ", API_URL)
 
-// login
-
 export const login = (email, password) => async (dispatch) => {
 
     try {
@@ -30,16 +28,21 @@ export const login = (email, password) => async (dispatch) => {
   
       localStorage.setItem('userInfo', JSON.stringify(userData));
     } catch (error) {
-      dispatch({
-        type: "USER_LOGIN_FAIL",
-        payload: error.response && error.response.data.detail ? error.response.data.detail : error.message,
-      });
+      let errorMessage = "Sign-In failed. Please check your details.";
   
-      if (error.response.data.detail === "Given token not valid for any token type") {
-        dispatch(logout());
-        navigate('/')
+      if (error.response && error.response.data) {
+          const errorData = error.response.data;
+  
+          errorMessage = Object.entries(errorData)
+              .map(([key, messages]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${messages.join(", ")}`)
+              .join(" | ");
       }
-    }
+  
+      dispatch({
+          type: "USER_LOGIN_FAIL",
+          payload: errorMessage,
+      });
+  }
   };
 
 

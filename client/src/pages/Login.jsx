@@ -5,15 +5,35 @@ import { useDispatch, useSelector } from 'react-redux'
 import { login } from '../actions/userActions'
 
 const Login = () => {
-
   const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.userLoginReducer);
+  const { loading, error, userInfo } = useSelector((state) => state.userLoginReducer);
   const [email, setUserEmail] = useState('');
   const [password, setUserPassword] = useState('');
+  const [localError, setLocalError] = useState('');
 
   const handleSubmit = (e) => {
+    e.preventDefault(); // Prevent default form submission
+    
+    // Basic validation
+    if (!email || !password) {
+      setLocalError('Please fill in all fields');
+      return;
+    }
+    
+    setLocalError(''); // Clear previous errors
     dispatch(login(email, password));
   }
+
+  // Clear error when component unmounts or when user starts typing
+  useEffect(() => {
+    if (error) {
+      setLocalError(error);
+    }
+  }, [error]);
+
+  const dismissError = () => {
+    setLocalError('');
+  };
 
   // Animation variants
   const containerVariants = {
@@ -81,6 +101,24 @@ const Login = () => {
     }
   }
 
+  const slideIn = (direction, type, delay, duration) => ({
+    hidden: {
+      x: direction === "left" ? "-100%" : direction === "right" ? "100%" : 0,
+      opacity: 0,
+    },
+    show: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        type,
+        delay,
+        duration,
+      },
+    },
+  });
+
+  const variants = slideIn("left", "tween", 0.6, 0.5);
+
   return (
     <motion.div 
       className='min-h-screen backdrop-blur-xl bg-slate-900/20 flex items-center justify-center p-4'
@@ -136,6 +174,32 @@ const Login = () => {
             <p className='text-black/70 font-light'>Sign in to your account</p>
           </motion.div>
 
+          {/* Error Display */}
+          {localError && 
+            <motion.div 
+              initial='hidden' 
+              animate='show' 
+              variants={variants} 
+              className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-600 text-sm flex mb-4"
+            >
+              <svg className="shrink-0 w-4 h-4 me-2 mt-0.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+              </svg>
+              <p className='font-medium flex-1'>{localError}</p>
+              <button 
+                onClick={dismissError} 
+                type="button" 
+                className="ms-auto -mx-1.5 -my-1.5 bg-red-50 text-red-900 rounded-lg focus:ring-2 focus:ring-red-400 p-1.5 hover:bg-red-200 inline-flex items-center justify-center h-8 w-8"
+                aria-label="Close"
+              >
+                <span className="sr-only">Close</span>
+                <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                </svg>
+              </button>
+            </motion.div>
+          }
+
           <form className='space-y-6' onSubmit={handleSubmit}>
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -148,12 +212,16 @@ const Login = () => {
               <motion.input
                 type='email'
                 id='email'
-                className='w-full px-4 py-3 bg-black/10 border border-black/20 rounded-lg text-black placeholder-black/40 focus:outline-none transition-all duration-200 backdrop-blur-sm'
+                className='w-full px-4 py-3 bg-white/10 border border-black/20 rounded-lg text-black placeholder-black/40 focus:outline-none transition-all duration-200 backdrop-blur-sm'
                 placeholder='Enter your email'
                 variants={inputVariants}
                 value={email}
-                onChange={(e) => setUserEmail(e.target.value)}
+                onChange={(e) => {
+                  setUserEmail(e.target.value);
+                  if (localError) setLocalError(''); // Clear error when user starts typing
+                }}
                 whileFocus="focus"
+                required
               />
             </motion.div>
 
@@ -168,12 +236,16 @@ const Login = () => {
               <motion.input
                 type='password'
                 id='password'
-                className='w-full px-4 py-3 bg-black/5 border border-black/20 rounded-lg text-black placeholder-black/40 focus:outline-none transition-all duration-200 backdrop-blur-sm'
+                className='w-full px-4 py-3 bg-white/10 border border-black/20 rounded-lg text-black placeholder-black/40 focus:outline-none transition-all duration-200 backdrop-blur-sm'
                 placeholder='Enter your password'
                 value={password}
-                onChange={(e) => setUserPassword(e.target.value)}
+                onChange={(e) => {
+                  setUserPassword(e.target.value);
+                  if (localError) setLocalError(''); // Clear error when user starts typing
+                }}
                 variants={inputVariants}
                 whileFocus="focus"
+                required
               />
             </motion.div>
 
@@ -196,7 +268,7 @@ const Login = () => {
               </div>
               <motion.a 
                 href='#' 
-                className='text-sm text-black/70 hover:text-white transition-colors duration-200'
+                className='text-sm text-black/70 hover:text-black transition-colors duration-200'
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -205,34 +277,35 @@ const Login = () => {
             </motion.div>
 
             <motion.button
-                type='submit'
-                className='w-full bg-[#1F1C7A] text-white py-3 px-4 rounded-xl cursor-pointer font-semibold transition-all duration-200 backdrop-blur-sm border border-[#1F1C7A]/30 mt-6 flex items-center justify-center min-h-[48px]'
-                variants={buttonVariants}
-                initial="initial"
-                whileHover="hover"
-                whileTap="tap"
-                >
-                {loading ? (
-                    <svg 
-                    className="animate-spin h-5 w-5 mx-auto" 
-                    viewBox="0 0 24 24"
-                    >
-                    <circle 
-                        cx="12" 
-                        cy="12" 
-                        r="10" 
-                        stroke="currentColor" 
-                        strokeWidth="2" 
-                        fill="none" 
-                        strokeLinecap="round"
-                        strokeDasharray="40 100"
-                        className="text-white opacity-60"
-                    />
-                    </svg>
-                ) : (
-                    'Sign In'
-                )}
-                </motion.button>
+              type='submit'
+              className='w-full bg-[#1F1C7A] text-white py-3 px-4 rounded-xl cursor-pointer font-semibold transition-all duration-200 backdrop-blur-sm border border-[#1F1C7A]/30 mt-6 flex items-center justify-center min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed'
+              variants={buttonVariants}
+              initial="initial"
+              whileHover={!loading ? "hover" : {}}
+              whileTap={!loading ? "tap" : {}}
+              disabled={loading}
+            >
+              {loading ? (
+                  <svg 
+                  className="animate-spin h-5 w-5 mx-auto" 
+                  viewBox="0 0 24 24"
+                  >
+                  <circle 
+                      cx="12" 
+                      cy="12" 
+                      r="10" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      fill="none" 
+                      strokeLinecap="round"
+                      strokeDasharray="40 100"
+                      className="text-white opacity-60"
+                  />
+                  </svg>
+              ) : (
+                  'Sign In'
+              )}
+            </motion.button>
 
             <motion.div 
               className='text-center'
