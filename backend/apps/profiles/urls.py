@@ -9,5 +9,5 @@ router.register(r'documents', DocumentViewset, basename='document')
 router.register(r'tasks', TaskViewset, basename='task')
 
 urlpatterns = [
-    path('profile/', include(router.urls)),
+    path('user_profile/', include(router.urls)),
 ]

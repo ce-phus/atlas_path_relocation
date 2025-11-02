@@ -44,6 +44,7 @@ LOCAL_APPS = [
     "apps.chat",
     'apps.users',
     "apps.profiles",
+    "apps.dashboard",
 ]
 
 DJANGO_APPS = [
