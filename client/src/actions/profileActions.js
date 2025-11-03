@@ -1,5 +1,7 @@
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL
+
 export const getAuthHeaders = (getState) => {
     const { userLoginReducer } = getState();
     const { userInfo } = userLoginReducer;
@@ -31,6 +33,7 @@ export const getProfile = () => async (dispatch, getState) => {
         };
 
         const { data } = await axios.get(`${API_URL}/api/v1/profile/get_profile/`, config);
+        console.log("Profile data fetched:", data);
         dispatch({
             type: "GET_PROFILE_SUCCESS",
             payload: data,

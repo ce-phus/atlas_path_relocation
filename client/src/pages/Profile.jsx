@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react'
-import { Layout, Skeleton } from '../components'
+import { Layout, Skeleton, ProfileForm, DocumentSection, ConsultationSection, ProgressTracker } from '../components'
 import { useDispatch, useSelector } from 'react-redux'
-import { loadProfile } from "../actions/profileActions"
+import { loadProfile, getProfile } from "../actions/profileActions"
+import { motion } from 'framer-motion'
 
 const Profile = () => {
     const dispatch = useDispatch();
-    const { profile, error, loading } = useSelector((state) => state.profileReducer);
+    const { profile, error, loading } = useSelector((state) => state.getProfileReducer);
     const [activeTab, setActiveTab] = useState('overview');
-    console.log("Profile: ", profile);
 
     useEffect(()=> {
         if (!profile) {
-            dispatch(loadProfile());
+            dispatch(getProfile());
         }
     }, [dispatch, profile]);
   return (

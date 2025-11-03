@@ -43,10 +43,12 @@ export const profileReducer = (state = initialState, action) => {
         case "DOCUMENTS_UPLOAD_REQUEST":
         case "DOCUMENT_STATUS_UPDATE_REQUEST":
             return { ...state, loading: true, error: null };
+
         case "DOCUMENTS_LOAD_SUCCESS":
         case "DOCUMENTS_UPLOAD_SUCCESS":
         case "DOCUMENT_STATUS_UPDATE_SUCCESS":
             return { ...state, loading: false, documents: action.payload, error: null };
+            
         case "DOCUMENTS_LOAD_FAIL":
         case "DOCUMENTS_UPLOAD_FAIL":
         case "DOCUMENT_STATUS_UPDATE_FAIL":
@@ -84,12 +86,12 @@ export const profileReducer = (state = initialState, action) => {
     }
 }
 
-export const getProfileReducer = (state = { profile: {} }, action) => {
+export const getProfileReducer = (state = initialState, action) => {
     switch (action.type) {
         case "GET_PROFILE_REQUEST":
             return { ...state, loading: true };
         case "GET_PROFILE_SUCCESS":
-            return { loading: false, profile: action.payload.profile };
+            return { loading: false, profile: action.payload };
         case "GET_PROFILE_FAIL":
             return { loading: false, error: action.payload };
         default:

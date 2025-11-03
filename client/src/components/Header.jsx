@@ -5,9 +5,19 @@ import { IoNotifications } from "react-icons/io5";
 import { logo } from '../assets';
 import { AiOutlineMenuUnfold } from "react-icons/ai";
 import { FaUser } from "react-icons/fa";
+import { getProfile } from '../actions/profileActions';
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
+  const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.userLoginReducer);
+
+  const { profile, error, loading } = useSelector((state) => state.getProfileReducer);
+
+    useEffect(()=> {
+        if (!profile) {
+            dispatch(getProfile());
+        }
+    }, [dispatch, profile]);
 
   return (
     <nav className='fixed w-full h-16 p-2 top-0 bg-white border-b border-gray-300 flex items-center justify-between z-50'>
@@ -40,7 +50,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             <FaUser size={16} className="text-gray-600" />
           </div>
           <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 hidden md:block">
-            {userInfo?.first_name || 'User'}
+            {profile?.user.first_name || 'User'}
           </span>
         </Link>
       </div>

@@ -6,8 +6,7 @@ ENV_FILE_PARAM = --env-file .env
 endif
 
 build-dev:
-	docker compose up --build -d --remove-orphans api client-dev nginx-dev cephusestate-db redis flower celery_worker celery_beat grafana api1
-
+	docker compose up --build -d --remove-orphans api client-dev nginx atlaspath-db redis flower celery_worker 
 build-prod:
 	docker compose up --build -d --remove-orphans api client nginx cephusestate-db redis flower celery_worker celery_beat grafana
 

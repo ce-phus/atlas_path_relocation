@@ -97,9 +97,9 @@ class ProfileSerializer(serializers.ModelSerializer):
             'housing_budget_max', 'preferred_neighborhoods', 'preferred_contact_method',
             'notification_preferences', 'relocation_consultant', 'consultant_details',
             'consultant_name', 'consultant_employee_id', 'overall_progress',
-            'current_stage', 'documents', 'tasks', 'created', 'modified'
+            'current_stage', 'documents', 'tasks', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['created', 'modified']
+        read_only_fields = ['created_at', 'updated_at']
 
 class ProfileCreateSerializer(serializers.ModelSerializer):
     user_id = serializers.PrimaryKeyRelatedField(
