@@ -9,7 +9,8 @@ import {
 } from "./userReducers";
 
 import {
-    profileReducer
+    profileReducer,
+    getProfileReducer
 } from "./profileReducers"
 
 const allReducers = combineReducers({
@@ -20,6 +21,7 @@ const allReducers = combineReducers({
     userResetPasswordConfirmReducer,
 
     profileReducer,
+    getProfileReducer
 });
 
 export default allReducers;

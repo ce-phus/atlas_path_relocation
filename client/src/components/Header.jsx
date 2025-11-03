@@ -13,7 +13,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     <nav className='fixed w-full h-16 p-2 top-0 bg-white border-b border-gray-300 flex items-center justify-between z-50'>
       <div className='flex items-center'>
         <button
-          className='flex items-center text-black p-3 hover:bg-gray-100 rounded-lg transition-colors'
+          className='flex items-center text-black p-3 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer'
           onClick={toggleSidebar}
         >
           <AiOutlineMenuUnfold size={25} />
@@ -35,14 +35,14 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           </span>
         </div>
         
-        <div className="flex items-center space-x-2 cursor-pointer group">
+        <Link to={'/profile'} className="flex flex-col items-center space-x-2 cursor-pointer group">
           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
             <FaUser size={16} className="text-gray-600" />
           </div>
           <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 hidden md:block">
             {userInfo?.first_name || 'User'}
           </span>
-        </div>
+        </Link>
       </div>
     </nav>
   )

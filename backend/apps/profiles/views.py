@@ -14,6 +14,7 @@ from .serializers import (
     ProfileUpdateSerializer
 )
 from django.db import models
+from rest_framework.views import APIView
 
 class ConsultantViewset(viewsets.ModelViewSet):
     queryset = Consultant.objects.select_related('user').all()
@@ -200,4 +201,16 @@ class TaskViewset(viewsets.ModelViewSet):
         overdue_tasks = self.get_queryset().filter(is_completed=False, due_date__lt=today)
         serializer = self.get_serializer(overdue_tasks, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class GetProfileAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        user = request.user
+        try:
+            profile = Profile.objects.get(user=user)
+            serializer = ProfileSerializer(profile)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Profile.DoesNotExist:
+            return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
 

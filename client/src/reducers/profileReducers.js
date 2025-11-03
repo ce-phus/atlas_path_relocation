@@ -83,3 +83,16 @@ export const profileReducer = (state = initialState, action) => {
             return state;
     }
 }
+
+export const getProfileReducer = (state = { profile: {} }, action) => {
+    switch (action.type) {
+        case "GET_PROFILE_REQUEST":
+            return { ...state, loading: true };
+        case "GET_PROFILE_SUCCESS":
+            return { loading: false, profile: action.payload.profile };
+        case "GET_PROFILE_FAIL":
+            return { loading: false, error: action.payload };
+        default:
+            return state;
+    }
+};

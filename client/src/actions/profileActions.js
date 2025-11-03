@@ -4,15 +4,51 @@ export const getAuthHeaders = (getState) => {
     const { userLoginReducer } = getState();
     const { userInfo } = userLoginReducer;
 
+    if (!userInfo?.access) {
+        console.error("No access token found");
+        throw new Error("Authentication required");
+    }
+
     return {
         headers: {
-            Authorization: `Bearer ${userInfo?.access}`,
+            Authorization: `Bearer ${userInfo.access}`,
             "Content-Type": "application/json",
         }
     }
 }
 
+export const getProfile = () => async (dispatch, getState) => {
+    try {
+        dispatch({ type: "GET_PROFILE_REQUEST" });
 
+        const { userLoginReducer: { userInfo } } = getState();
+
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${userInfo.access}`,
+            },
+        };
+
+        const { data } = await axios.get(`${API_URL}/api/v1/profile/get_profile/`, config);
+        dispatch({
+            type: "GET_PROFILE_SUCCESS",
+            payload: data,
+        });
+    } catch (error) {
+        dispatch({
+            type: "GET_PROFILE_FAIL",
+            payload: error.response && error.response.data.detail
+                ? error.response.data.detail
+                : error.message,
+        });
+        if (error.response.data.detail === "Given token not valid for any token type") {
+            console.log("error response: ",error.response.data.detail)
+            // dispatch(logout());
+            
+          }
+    }
+};
 
 export const loadProfile = () => async(dispatch, getState) => {
     try {
@@ -20,20 +56,48 @@ export const loadProfile = () => async(dispatch, getState) => {
 
         const authHeaders = getAuthHeaders(getState);
 
-        const {data} = await axios.get("/api/v1/profile/user_profile/profiles", authHeaders);
+        // Correct endpoint based on your URLs
+        const {data} = await axios.get("/api/v1/profile/user_profile/profiles/", authHeaders);
 
         console.log("Profile data loaded:", data);
 
+        // Since your viewset filters by user, get the first profile
+        const userProfile = data.results ? data.results[0] : data[0];
+        
+        if (!userProfile) {
+            throw new Error("No profile found for current user");
+        }
+
         dispatch({
             type: "PROFILE_LOAD_SUCCESS",
-            payload: data,
+            payload: userProfile,
         })
     } catch(error) {
+        console.error("Profile load error details:", {
+            message: error.message,
+            response: error.response,
+            config: error.config
+        });
+        
+        let errorMessage = error.message;
+        
+        if (error.response) {
+            // Server responded with error status
+            if (error.response.status === 401) {
+                errorMessage = "Authentication failed. Please login again.";
+            } else if (error.response.status === 404) {
+                errorMessage = "Profile not found.";
+            } else if (error.response.data) {
+                errorMessage = error.response.data.detail || JSON.stringify(error.response.data);
+            }
+        } else if (error.request) {
+            // Request made but no response received
+            errorMessage = "Cannot connect to server. Please check if Django server is running.";
+        }
+
         dispatch({
             type: "PROFILE_LOAD_FAIL",
-            payload: error.response && error.response.data.detail
-                ? error.response.data.detail
-                : error.message,
+            payload: errorMessage,
         });
     }
 }
