@@ -17,7 +17,7 @@ class ConsultantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consultant
         fields = [
-            'id', 'employee_id', 'user', "full_name", "email", "specialization", "country", "years_of_experience", "bio", "expertise", "is_active", "max_clients", "current_client_count", "work_phone", "work_email", "availability_status", "created_at", "updated_at"
+            'id', 'employee_id', 'user', "full_name", "email", "specialization", "country", "years_experience", "bio", "expertise", "is_active", "max_clients", "current_client_count", "work_phone", "work_email", "availability_status", "created_at", "updated_at"
             ]
         
         read_only_fields = ['employee_id', 'created_at', 'updated_at', "current_client_count"]
@@ -37,7 +37,7 @@ class ConsultantCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consultant
         fields = [
-            'id', 'employee_id', 'user_id', 'email', 'first_name', 'last_name', 'full_name', "specialization", "country", "years_of_experience", "bio", "expertise", "is_active", "max_clients", "current_client_count", "work_phone", "work_email", "availability_status", "created_at", "updated_at"
+            'id', 'employee_id', 'user_id', 'email', 'first_name', 'last_name', 'full_name', "specialization", "country", "years_experience", "bio", "expertise", "is_active", "max_clients", "current_client_count", "work_phone", "work_email", "availability_status", "created_at", "updated_at"
             ]
         
     def create(self, validated_data):

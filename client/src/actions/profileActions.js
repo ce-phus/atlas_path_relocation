@@ -60,7 +60,7 @@ export const loadProfile = () => async(dispatch, getState) => {
         const authHeaders = getAuthHeaders(getState);
 
         // Correct endpoint based on your URLs
-        const {data} = await axios.get("/api/v1/profile/user_profile/profiles/", authHeaders);
+        const {data} = await axios.get(`${API_URL}/api/v1/profile/user_profile/profiles/`, authHeaders);
 
         console.log("Profile data loaded:", data);
 
@@ -110,7 +110,7 @@ export const updateProfile = (profileData) => async(dispatch, getState) => {
         dispatch({ type: "PROFILE_UPDATE_REQUEST" });
         const authHeaders = getAuthHeaders(getState);
 
-        const {data} = await axios.patch("/api/v1/profiles/user_profile/profiles/update/", profileData, authHeaders);
+        const {data} = await axios.patch(`${API_URL}/api/v1/profiles/user_profile/profiles/update/`, profileData, authHeaders);
 
         console.log("Profile data updated:", data);
 
@@ -133,7 +133,7 @@ export const loadAvailableConsultants = () => async(dispatch, getState) => {
         dispatch({ type: "AVAILABLE_CONSULTANTS_LOAD_REQUEST" });
         const authHeaders = getAuthHeaders(getState);
 
-        const {data} = await axios.get("/api/v1/profile/user_profile/profiles/available_consultants/", authHeaders);
+        const {data} = await axios.get(`${API_URL}/api/v1/profile/user_profile/profiles/available_consultants/`, authHeaders);
 
         console.log("Available consultants loaded:", data);
 
@@ -157,10 +157,11 @@ export const assignConsultant = (consultantId) => async(dispatch, getState) => {
 
         const { profile } = getState();
         const profileId = profile.profile?.id;
+        console.log("profile id: ", profileId);
         const authHeaders = getAuthHeaders(getState);
 
         const { data } = await axios.post(
-            `api/v1/profile/user_profile/profiles/${profileId}/assign_consultant/`,
+            `${API_URL}/api/v1/profile/user_profile/profiles/${profileId}/assign_consultant/`,
             { consultant_id: consultantId },
             authHeaders
         )
@@ -185,7 +186,7 @@ export const updateProfileProgress = (progressData) => async(dispatch, getState)
         dispatch({ type: "PROFILE_PROGRESS_UPDATE_REQUEST" });
         const authHeaders = getAuthHeaders(getState);
 
-        const {data} = await axios.post("/api/v1/profiles/user_profile/profiles/update_progress/", progressData, authHeaders);
+        const {data} = await axios.post(`${API_URL}/api/v1/profiles/user_profile/profiles/update_progress/`, progressData, authHeaders);
 
         console.log("Profile progress updated:", data);
 
@@ -209,7 +210,7 @@ export const loadDocuments = () => async(dispatch, getState) => {
 
         const authHeaders = getAuthHeaders(getState);
 
-        const {data} = await axios.get("/api/v1/profile/user_profile/documents/", authHeaders);
+        const {data} = await axios.get(`${API_URL}/api/v1/profile/user_profile/documents/`, authHeaders);
 
         console.log("Documents loaded:", data);
 
@@ -237,7 +238,7 @@ export const uploadDocument = (documentData) => async(dispatch, getState) => {
             }
         }
 
-        const {data} = await axios.post("/api/v1/profile/user_profile/documents/upload/", documentData, authHeaders);
+        const {data} = await axios.post(`${API_URL}/api/v1/profile/user_profile/documents/upload/`, documentData, authHeaders);
 
         console.log("Document uploaded:", data);
 
@@ -261,7 +262,7 @@ export const loadTasks = () => async(dispatch, getState) => {
 
         const authHeaders = getAuthHeaders(getState);
 
-        const {data} = await axios.get("/api/v1/profile/user_profile/tasks/", authHeaders);
+        const {data} = await axios.get(`${API_URL}/api/v1/profile/user_profile/tasks/`, authHeaders);
 
         console.log("Tasks loaded:", data);
 
@@ -286,7 +287,7 @@ export const markTaskComplete = (taskId) => async(dispatch, getState) => {
         const authHeaders = getAuthHeaders(getState);
 
         const {data} = await axios.post(
-            `/api/v1/profile/user_profile/tasks/${taskId}/complete/`,
+            `${API_URL}/api/v1/profile/user_profile/tasks/${taskId}/complete/`,
             {},
             authHeaders
         );
@@ -315,9 +316,7 @@ export const loadOverdueTasks = () => async(dispatch, getState) => {
 
         const authHeaders = getAuthHeaders(getState);
 
-        const {data} = await axios.get("/api/v1/profile/user_profile/tasks/overdue_tasks/", authHeaders);
-
-        console.log("Overdue tasks loaded:", data);
+        const {data} = await axios.get(`${API_URL}/api/v1/profile/user_profile/tasks/overdue_tasks/`, authHeaders);
 
         dispatch({
             type: "OVERDUE_TASKS_LOAD_SUCCESS",
@@ -340,7 +339,7 @@ export const updateDocumentStatus = (documentId, statusData) => async(dispatch, 
         const authHeaders = getAuthHeaders(getState);
 
         const {data} = await axios.patch(
-            `/api/v1/profile/user_profile/documents/${documentId}/update_status/`,
+            `${API_URL}/api/v1/profile/user_profile/documents/${documentId}/update_status/`,
             statusData,
             authHeaders
         );
@@ -370,7 +369,7 @@ export const createTask = (taskData) => async(dispatch, getState) => {
         dispatch({ type: "TASK_CREATE_REQUEST" });
         const authHeaders = getAuthHeaders(getState);
 
-        const {data} = await axios.post("/api/v1/profile/user_profile/tasks/", taskData, authHeaders);
+        const {data} = await axios.post(`${API_URL}/api/v1/profile/user_profile/tasks/`, taskData, authHeaders);
 
         console.log("Task created:", data);
 

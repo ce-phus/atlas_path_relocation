@@ -7,6 +7,12 @@ const initialState = {
     tasks: [],
     overdueTasks: [],
     success: false,
+    documentloading: false,
+    documenterror: null,
+    taskloading: false,
+    taskerror: null,
+    overdueloading: false,
+    overdueerror: null,
 }
 
 export const profileReducer = (state = initialState, action) => {
@@ -42,44 +48,44 @@ export const profileReducer = (state = initialState, action) => {
         case "DOCUMENTS_LOAD_REQUEST":
         case "DOCUMENTS_UPLOAD_REQUEST":
         case "DOCUMENT_STATUS_UPDATE_REQUEST":
-            return { ...state, loading: true, error: null };
+            return { ...state, documentloading: true, documenterror: null };
 
         case "DOCUMENTS_LOAD_SUCCESS":
         case "DOCUMENTS_UPLOAD_SUCCESS":
         case "DOCUMENT_STATUS_UPDATE_SUCCESS":
-            return { ...state, loading: false, documents: action.payload, error: null };
-            
+            return { ...state, documentloading: false, documents: action.payload, documenterror: null };
+
         case "DOCUMENTS_LOAD_FAIL":
         case "DOCUMENTS_UPLOAD_FAIL":
         case "DOCUMENT_STATUS_UPDATE_FAIL":
-            return { ...state, loading: false, error: action.payload };
+            return { ...state, documentloading: false, documenterror: action.payload };
 
         // === TASKS ===
         case "TASKS_LOAD_REQUEST":
         case "TASK_CREATE_REQUEST":
         case "TASK_COMPLETE_REQUEST":
-            return { ...state, loading: true, error: null };
+            return { ...state, taskloading: true, taskerror: null };
         case "TASKS_LOAD_SUCCESS":
-            return { ...state, loading: false, tasks: action.payload, error: null };
+            return { ...state, taskoading: false, tasks: action.payload, taskerror: null };
 
         case "TASK_CREATE_SUCCESS":
         case "TASK_COMPLETE_SUCCESS":
-            return { ...state, loading: false, success: true, error: null };
+            return { ...state, taskloading: false, success: true, taskerror: null };
 
         case "TASKS_LOAD_FAIL":
         case "TASK_CREATE_FAIL":
         case "TASK_COMPLETE_FAIL":
-            return { ...state, loading: false, error: action.payload };
+            return { ...state, taskloading: false, taskerror: action.payload };
 
         // === OVERDUE TASKS ===
         case "OVERDUE_TASKS_LOAD_REQUEST":
-            return { ...state, loading: true, error: null };
+            return { ...state, overdueloading: true, overdueerror: null };
         
         case "OVERDUE_TASKS_LOAD_SUCCESS":
-            return { ...state, loading: false, overdueTasks: action.payload, error: null };
+            return { ...state, overdueloading: false, overdueTasks: action.payload, overdueerror: null };
         
         case "OVERDUE_TASKS_LOAD_FAIL":
-            return { ...state, loading: false, error: action.payload };
+            return { ...state, overdueloading: false, overdueerror: action.payload };
 
         default:
             return state;

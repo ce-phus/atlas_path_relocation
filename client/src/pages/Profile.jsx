@@ -1,28 +1,94 @@
 import React, { useEffect, useState } from 'react'
-import { Layout, Skeleton, ProfileForm, DocumentSection, ConsultationSection, ProgressTracker } from '../components'
+import { Layout, Skeleton, ProfileForm, DocumentSection, ConsultationSection, ProgressTracker, ProfileHeader, TasksSection } from '../components'
 import { useDispatch, useSelector } from 'react-redux'
-import { loadProfile, getProfile } from "../actions/profileActions"
+import { loadProfile, getProfile, loadTasks, loadAvailableConsultants } from "../actions/profileActions"
 import { motion } from 'framer-motion'
 
 const Profile = () => {
     const dispatch = useDispatch();
     const { profile, error, loading } = useSelector((state) => state.getProfileReducer);
     const [activeTab, setActiveTab] = useState('overview');
+    console.log("profile in Profile UI: ", profile);
 
     useEffect(()=> {
         if (!profile) {
             dispatch(getProfile());
+            dispatch(loadProfile());
+            dispatch(loadTasks());
+
+            if (profile?.relocation_consultant) {
+                dispatch(loadAvailableConsultants());
+            }
         }
-    }, [dispatch, profile]);
+    }, [dispatch, profile, profile?.relocation_consultant]);
   return (
     <Layout>
-        <div className='min-h-screen bg-gray-50 py-8'>
+        <div className='min-h-screen'>
             {loading ? (
                 <Skeleton />
             ): error ? (
                 <div>{error}</div>
             ): (
-                <div className='max-w-7xl mx-auto px-4 '>
+                <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+                    <ProfileHeader profile={profile} />
+
+                    <div className='mt-6 border-b border-gray-300'>
+                        <nav className='-mb-px flex space-x-8'>
+                            {[
+                                { name: 'Overview', id: 'overview' },
+                                { name: 'Edit Profile', id: 'edit' },
+                                { name: 'Documents', id: 'documents' },
+                                { name: 'Consultant', id: 'consultant' },
+                                { name: 'Task', id: 'task' },
+                            ].map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm  cursor-pointer ${
+                                        activeTab === tab.id
+                                        ? 'border-indigo-500 text-indigo-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    }`}
+                                >
+                                    {tab.name}
+                                </button>
+                            ))}
+                        </nav>
+                    </div>
+
+                    {/* Tab Content */}
+                    <div className='mt-6'>
+                        {activeTab === 'overview' && (
+                            <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+                                <div className='lg:col-span-2'>
+                                    <ProgressTracker profile={profile} />
+                                    <TasksSection profile={profile} />
+                                </div>
+
+                                <div className='lg:col-span-1'>
+                                    <ConsultationSection profile={profile} />
+                                    <DocumentSection profile={profile} />
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'edit' && (
+                            <ProfileForm profile={profile} />
+                        )}
+                        {activeTab === 'documents' && (
+                            <DocumentSection profile={profile} />
+                        )}
+                        {activeTab === 'consultant' && (
+                            <ConsultationSection profile={profile} />
+                        )}
+                        {activeTab === 'task' && (
+                            <div>
+                                {/* Task Section can be implemented here */}
+                                <h2 className='text-xl font-semibold'>Tasks</h2>
+                                <p>Task management features will be available soon.</p>
+                            </div>
+                        )}
+                    </div>
+
                 </div>
             )}
         </div>
