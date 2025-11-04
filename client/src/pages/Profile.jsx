@@ -67,7 +67,7 @@ const Profile = () => {
 
                                 <div className='lg:col-span-1'>
                                     <ConsultationSection profile={profile} />
-                                    <DocumentSection profile={profile} />
+                                    <DocumentSection profile={profile} expanded={false} />
                                 </div>
                             </div>
                         )}
@@ -82,9 +82,7 @@ const Profile = () => {
                         )}
                         {activeTab === 'task' && (
                             <div>
-                                {/* Task Section can be implemented here */}
-                                <h2 className='text-xl font-semibold'>Tasks</h2>
-                                <p>Task management features will be available soon.</p>
+                                <TasksSection profile={profile}/>
                             </div>
                         )}
                     </div>

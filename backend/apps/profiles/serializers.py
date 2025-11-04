@@ -60,7 +60,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         model = Document
         fields = [
             'id', 'profile', 'document_type', 'document_name', 'document_file',
-            'status', 'reviewed_by', 'reviewed_by_name', 'client_name', 'created', 'modified'
+            'status', 'reviewed_by', 'reviewed_by_name', 'client_name', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
 
@@ -72,9 +72,9 @@ class TaskSerializer(serializers.ModelSerializer):
         model = Task
         fields = [
             'id', 'profile', 'title', 'description', 'due_date', 'due_date_formatted',
-            'is_completed', 'client_name', 'created', 'modified'
+            'is_completed', 'client_name', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['created', 'modified']
+        read_only_fields = ['created_at', 'updated_at']
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)

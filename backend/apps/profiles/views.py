@@ -174,7 +174,8 @@ class TaskViewset(viewsets.ModelViewSet):
     filterset_fields = ["is_completed", "due_date", "profile"]
     search_fields = ["title", "description", "profile__user__first_name", "profile__user__last_name"]
     ordering_fields = ["due_date", "created_at", "is_completed"]
-
+    lookup_field = 'id'  # Use the UUID field for lookups
+    
     def get_queryset(self):
         user = self.request.user
         
@@ -188,11 +189,26 @@ class TaskViewset(viewsets.ModelViewSet):
         return Task.objects.none()
     
     @action(detail=True, methods=["post"])
-    def mark_complete(self, request, pk=None):
-        task = self.get_object()
-        task.is_completed = True
-        task.save()
-        return Response({"status": "Task marked as complete."}, status=status.HTTP_200_OK)
+    def mark_complete(self, request, id=None):  
+        try:
+            task = self.get_object()
+            
+            user = request.user
+            if hasattr(user, 'consultant_profile'):
+                if task.profile.relocation_consultant != user.consultant_profile:
+                    return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
+            elif hasattr(user, 'profile'):
+                if task.profile.user != user:
+                    return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
+            elif not user.is_staff:
+                return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
+            
+            task.is_completed = True
+            task.save()
+            return Response({"status": "Task marked as complete."}, status=status.HTTP_200_OK)
+            
+        except Task.DoesNotExist:
+            return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
     
     @action(detail=False, methods=["get"])
     def overdue_tasks(self, request):

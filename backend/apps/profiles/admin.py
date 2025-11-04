@@ -1,6 +1,6 @@
 # admin.py
 from django.contrib import admin
-from .models import Consultant, Profile
+from .models import Consultant, Profile, Document, Task
 
 @admin.register(Consultant)
 class ConsultantAdmin(admin.ModelAdmin):
@@ -18,3 +18,16 @@ class ProfileAdmin(admin.ModelAdmin):
     def get_consultant_employee_id(self, obj):
         return obj.get_consultant_employee_id()
     get_consultant_employee_id.short_description = 'Consultant ID'
+
+
+@admin.register(Document)
+class DocumentAdmin(admin.ModelAdmin):
+    list_display = ('profile', 'document_type', 'created_at', 'reviewed_by', "status")
+    list_filter = ('document_type', 'status')
+    search_fields = ('profile__user__first_name', 'profile__user__last_name', 'document_type')
+
+@admin.register(Task)
+class TaskAdmin(admin.ModelAdmin):
+    list_display = ('profile', 'description',  'due_date', 'title', "is_completed",)
+    list_filter = ('title', "profile")
+    search_fields = ('profile__user__first_name', 'profile__user__last_name', 'task_type')
