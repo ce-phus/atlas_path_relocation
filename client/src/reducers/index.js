@@ -13,6 +13,10 @@ import {
     getProfileReducer
 } from "./profileReducers"
 
+import {
+    progressReducer
+} from "./progressReducer"
+
 const allReducers = combineReducers({
     userLoginReducer,
     userRegisterReducer,
@@ -21,7 +25,9 @@ const allReducers = combineReducers({
     userResetPasswordConfirmReducer,
 
     profileReducer,
-    getProfileReducer
+    getProfileReducer,
+
+    progressReducer,
 });
 
 export default allReducers;

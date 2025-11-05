@@ -248,6 +248,47 @@ class Profile(TimeStampedUUIDModel):
             return self.relocation_consultant.user.get_full_name()
         return "No Consultant Assigned"
     
+    def calculate_stage_progress(self, stage):
+        """Calculate progress percentage for a specific stage"""
+        stage_tasks = self.tasks.filter(stage=stage)
+        if not stage_tasks.exists():
+            return 0
+        
+        completed_tasks = stage_tasks.filter(is_completed=True).count()
+        total_tasks = stage_tasks.count()
+        
+        return int((completed_tasks / total_tasks) * 100) if total_tasks > 0 else 0
+    
+    def calculate_overall_progress(self):
+        """Calculate overall relocation progress"""
+        total_stages = len(Task.RELOCATION_STAGES)
+        if total_stages == 0:
+            return 0
+        
+        total_progress = sum(
+            self.calculate_stage_progress(stage[0]) 
+            for stage in Task.RELOCATION_STAGES
+        )
+        
+        return int(total_progress / total_stages)
+    
+    def update_progress(self):
+        """Update and save the overall progress"""
+        self.overall_progress = self.calculate_overall_progress()
+        
+        # Update current stage based on progress
+        stages = [stage[0] for stage in Task.RELOCATION_STAGES]
+        for i, stage in enumerate(stages):
+            stage_progress = self.calculate_stage_progress(stage)
+            if stage_progress < 100 and (i == 0 or self.calculate_stage_progress(stages[i-1]) == 100):
+                self.current_stage = Task.RELOCATION_STAGES[i][1]
+                break
+        else:
+            # All stages complete
+            self.current_stage = "Completed"
+        
+        self.save()
+    
 
 class Document(TimeStampedUUIDModel):
     profile = models.ForeignKey(
@@ -293,6 +334,15 @@ class Document(TimeStampedUUIDModel):
         return f"Document: {self.document_type}"
     
 class Task(TimeStampedUUIDModel):
+    RELOCATION_STAGES = [
+        ('initial_consultation', 'Initial Consultation'),
+        ('document_collection', 'Document Collection'),
+        ('visa_processing', 'Visa Processing'),
+        ('housing_search', 'Housing Search'),
+        ('school_enrollment', 'School Enrollment'),
+        ('final_relocation', 'Final Relocation'),
+    ]
+    
     profile = models.ForeignKey(
         Profile,
         on_delete=models.CASCADE,
@@ -306,6 +356,12 @@ class Task(TimeStampedUUIDModel):
         blank=True,
         verbose_name=_("Task Description")
     )
+    stage = models.CharField(
+        max_length=50,
+        choices=RELOCATION_STAGES,
+        verbose_name=_("Relocation Stage"),
+        default="initial_consultation"
+    )
     due_date = models.DateField(
         null=True,
         blank=True,
@@ -315,9 +371,23 @@ class Task(TimeStampedUUIDModel):
         default=False,
         verbose_name=_("Is Completed")
     )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("Display Order")
+    )
+
+    class Meta:
+        ordering = ['order', 'created_at']
 
     def __str__(self):
         if self.profile and self.profile.user and hasattr(self.profile.user, 'get_full_name'):
             full_name = self.profile.user.get_full_name()
             return f"Task: {self.title} for {full_name}"
         return f"Task: {self.title}"
+
+    def save(self, *args, **kwargs):
+        # Auto-set order based on stage if not provided
+        if not self.order:
+            stage_order = dict((stage, idx) for idx, (stage, _) in enumerate(self.RELOCATION_STAGES))
+            self.order = stage_order.get(self.stage, 0)
+        super().save(*args, **kwargs)

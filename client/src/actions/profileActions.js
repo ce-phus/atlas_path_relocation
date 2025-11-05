@@ -386,3 +386,37 @@ export const createTask = (taskData) => async(dispatch, getState) => {
         });
     }
 }
+
+export const fetchProgress = (profileId) => async (dispatch, getState) => {
+    try {
+        dispatch({ type: "PROGRESS_FETCH_REQUEST" });
+
+        if (!profileId) {
+            throw new Error("Profile ID is required to fetch progress.");
+        }
+
+        const authHeaders = getAuthHeaders(getState);
+
+        const { data } = await axios.get(
+            `${API_URL}/api/v1/profile/tasks/progress/?profile_id=${profileId}`,
+            authHeaders
+        );
+
+        console.log("Progress data fetched:", data);
+
+        dispatch({
+            type: "PROGRESS_FETCH_SUCCESS",
+            payload: data,
+        });
+    } catch (error) {
+        console.error("Error fetching progress:", error);
+
+        dispatch({
+            type: "PROGRESS_FETCH_FAIL",
+            payload:
+                error.response && error.response.data.detail
+                    ? error.response.data.detail
+                    : error.message,
+        });
+    }
+};

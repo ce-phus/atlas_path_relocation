@@ -174,7 +174,7 @@ class TaskViewset(viewsets.ModelViewSet):
     filterset_fields = ["is_completed", "due_date", "profile"]
     search_fields = ["title", "description", "profile__user__first_name", "profile__user__last_name"]
     ordering_fields = ["due_date", "created_at", "is_completed"]
-    lookup_field = 'id'  # Use the UUID field for lookups
+    lookup_field = 'id'
     
     def get_queryset(self):
         user = self.request.user
@@ -209,7 +209,73 @@ class TaskViewset(viewsets.ModelViewSet):
             
         except Task.DoesNotExist:
             return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+    @action(detail=False, methods=["get"])
+    def stage_tasks(self, request):
+        """Get tasks grouped by stage"""
+        profile_id = request.query_params.get('profile_id')
+        if profile_id:
+            tasks = self.get_queryset().filter(profile_id=profile_id)
+        else:
+            tasks = self.get_queryset()
+        
+        stage_tasks = {}
+        for stage_code, stage_name in Task.RELOCATION_STAGES:
+            stage_tasks[stage_code] = {
+                'name': stage_name,
+                'tasks': TaskSerializer(tasks.filter(stage=stage_code), many=True).data,
+                'progress': 0  # Will be calculated in frontend
+            }
+        
+        return Response(stage_tasks, status=status.HTTP_200_OK)
     
+    @action(detail=False, methods=["get"])
+    def progress(self, request):
+        """Calculate weighted progress per stage and overall for a profile."""
+        profile_id = request.query_params.get('profile_id')
+        if not profile_id:
+            return Response({"error": "profile_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        tasks = self.get_queryset().filter(profile__id=profile_id)
+        if not tasks.exists():
+            return Response({
+                "overall_progress": 0,
+                "stages": []
+            }, status=status.HTTP_200_OK)
+
+        stage_progress_data = []
+        total_tasks = 0
+        total_completed_tasks = 0
+
+        # Loop through each stage
+        for stage_code, stage_name in Task.RELOCATION_STAGES:
+            stage_tasks = tasks.filter(stage=stage_code)
+            total_stage = stage_tasks.count()
+            completed_stage = stage_tasks.filter(is_completed=True).count()
+
+            progress = round((completed_stage / total_stage) * 100, 2) if total_stage > 0 else 0
+
+            # Accumulate for overall progress
+            total_tasks += total_stage
+            total_completed_tasks += completed_stage
+
+            stage_progress_data.append({
+                "stage": stage_code,
+                "name": stage_name,
+                "progress": progress,
+                "total_tasks": total_stage,
+                "completed_tasks": completed_stage
+            })
+
+        # ✅ Weighted overall progress based on total tasks completed
+        overall_progress = round((total_completed_tasks / total_tasks) * 100, 2) if total_tasks > 0 else 0
+
+        return Response({
+            "overall_progress": overall_progress,
+            "stages": stage_progress_data
+        }, status=status.HTTP_200_OK)
+
+
     @action(detail=False, methods=["get"])
     def overdue_tasks(self, request):
         from django.utils import timezone

@@ -67,12 +67,13 @@ class DocumentSerializer(serializers.ModelSerializer):
 class TaskSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source='profile.user.get_full_name', read_only=True)
     due_date_formatted = serializers.DateField(source='due_date', format='%Y-%m-%d', read_only=True)
+    stage_display = serializers.CharField(source='get_stage_display', read_only=True)
 
     class Meta:
         model = Task
         fields = [
             'id', 'profile', 'title', 'description', 'due_date', 'due_date_formatted',
-            'is_completed', 'client_name', 'created_at', 'updated_at'
+            'is_completed', 'client_name', 'created_at', 'updated_at', 'stage_display'
         ]
         read_only_fields = ['created_at', 'updated_at']
 

@@ -37,9 +37,9 @@ const ProfileHeader = ({ profile }) => {
                   </div>
               </div>
               <div className="text-right">
-                  <p className="text-sm text-gray-500">Current Stage</p>
+                  <p className="text-sm text-gray-500">Country</p>
                   <p className="text-lg font-semibold text-gray-900">
-                      {profile?.current_stage || 'Not Started'}
+                      {profile?.country || 'Not Started'}
                   </p>
               </div>
           </div>
