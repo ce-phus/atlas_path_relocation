@@ -70,10 +70,10 @@ const Profile = () => {
                             <ProfileForm profile={profile} />
                         )}
                         {activeTab === 'documents' && (
-                            <DocumentSection profile={profile} />
+                            <DocumentSection profile={profile} expanded={true}/>
                         )}
                         {activeTab === 'consultant' && (
-                            <ConsultationSection profile={profile} />
+                            <ConsultationSection profile={profile} expanded={true}/>
                         )}
                         {activeTab === 'task' && (
                             <div>

@@ -96,7 +96,7 @@ const SideNav = React.forwardRef(({ isSidebarOpen }, ref) => {
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/sign-in');
+    navigate('/');
   };
 
   return (
@@ -247,8 +247,7 @@ const SideNav = React.forwardRef(({ isSidebarOpen }, ref) => {
         
         
       </div>
-
-      {/* Quick Actions - Only show when sidebar is open */}
+      
       {isSidebarOpen && (
         <div className="p-4 border-t border-gray-200">
           <h4 className="text-sm font-semibold text-gray-700 mb-3">
@@ -265,13 +264,12 @@ const SideNav = React.forwardRef(({ isSidebarOpen }, ref) => {
         </div>
       )}
 
-      {/* Logout Section - Always visible at the bottom */}
       <div className="mt-auto border-t border-gray-200 ">
         <button
           onClick={handleLogout}
           className={`
             flex items-center w-full px-3 py-4 text-sm font-medium rounded-lg transition-all duration-200 group
-            text-red-600 hover:bg-red-50
+            text-red-600 hover:bg-red-50 cursor-pointer
           `}
           title={!isSidebarOpen ? 'Logout' : undefined}
         >

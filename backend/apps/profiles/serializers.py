@@ -79,6 +79,7 @@ class TaskSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    consultant = ConsultantSerializer(read_only=True)
     full_name = serializers.CharField(source='user.get_full_name', read_only=True)
     email = serializers.CharField(source='user.email', read_only=True)
     consultant_details = ConsultantSerializer(source='relocation_consultant', read_only=True)
@@ -98,7 +99,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'housing_budget_max', 'preferred_neighborhoods', 'preferred_contact_method',
             'notification_preferences', 'relocation_consultant', 'consultant_details',
             'consultant_name', 'consultant_employee_id', 'overall_progress',
-            'current_stage', 'documents', 'tasks', 'created_at', 'updated_at'
+            'current_stage', 'documents', 'tasks', 'created_at', 'updated_at', "consultant"
         ]
         read_only_fields = ['created_at', 'updated_at']
 

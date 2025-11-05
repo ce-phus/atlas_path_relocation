@@ -1,7 +1,7 @@
-// components/DocumentSection.jsx
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { uploadDocument, loadDocuments } from '../actions/profileActions';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const DocumentSection = ({ profile, expanded = false }) => {
     const dispatch = useDispatch();
@@ -9,12 +9,13 @@ const DocumentSection = ({ profile, expanded = false }) => {
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [hasLoaded, setHasLoaded] = useState(false);
+    const [dragActive, setDragActive] = useState(false);
     
     // Form state for document upload
     const [uploadForm, setUploadForm] = useState({
         document_type: '',
         document_file: null,
-        description: '' // Optional field if you add it to model
+        description: ''
     });
 
     // Common document types for dropdown
@@ -36,11 +37,54 @@ const DocumentSection = ({ profile, expanded = false }) => {
         'Other'
     ];
 
-    console.log("documents", documents);
-    console.log("Profile in DocumentSection:", profile);
+    // Animation variants
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: {
+            y: 0,
+            opacity: 1,
+            transition: {
+                type: "spring",
+                stiffness: 100
+            }
+        }
+    };
+
+    const modalVariants = {
+        hidden: { 
+            opacity: 0,
+            scale: 0.8
+        },
+        visible: { 
+            opacity: 1,
+            scale: 1,
+            transition: {
+                type: "spring",
+                damping: 25,
+                stiffness: 300
+            }
+        },
+        exit: {
+            opacity: 0,
+            scale: 0.8,
+            transition: {
+                duration: 0.2
+            }
+        }
+    };
 
     const handleFileUpload = async (event) => {
-        event.preventDefault(); // Prevent default form submission
+        event.preventDefault();
         
         if (!uploadForm.document_file || !uploadForm.document_type) {
             alert('Please select a file and document type');
@@ -52,7 +96,6 @@ const DocumentSection = ({ profile, expanded = false }) => {
         formData.append('document_type', uploadForm.document_type);
         formData.append('profile', profile.id);
         
-        // Add optional description if provided
         if (uploadForm.description) {
             formData.append('description', uploadForm.description);
         }
@@ -61,7 +104,6 @@ const DocumentSection = ({ profile, expanded = false }) => {
         try {
             await dispatch(uploadDocument(formData));
             setShowUploadModal(false);
-            // Reset form after successful upload
             setUploadForm({
                 document_type: '',
                 document_file: null,
@@ -83,7 +125,6 @@ const DocumentSection = ({ profile, expanded = false }) => {
                 document_file: file
             }));
             
-            // Auto-set document type from filename if not already set
             if (!uploadForm.document_type) {
                 const fileName = file.name.split('.')[0];
                 const matchingType = documentTypes.find(type => 
@@ -100,6 +141,30 @@ const DocumentSection = ({ profile, expanded = false }) => {
         }
     };
 
+    const handleDrag = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            const file = e.dataTransfer.files[0];
+            setUploadForm(prev => ({
+                ...prev,
+                document_file: file
+            }));
+        }
+    };
+
     const handleInputChange = (field, value) => {
         setUploadForm(prev => ({
             ...prev,
@@ -107,52 +172,83 @@ const DocumentSection = ({ profile, expanded = false }) => {
         }));
     };
 
-
-
     const getStatusColor = (status) => {
         switch (status) {
-            case 'approved': return 'bg-green-100 text-green-800';
-            case 'rejected': return 'bg-red-100 text-red-800';
-            case 'awaiting review': return 'bg-yellow-100 text-yellow-800';
+            case 'approved': return 'bg-green-100 text-green-800 border-green-200';
+            case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
+            case 'awaiting review': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
             case 'submitted': 
-            default: return 'bg-blue-100 text-blue-800';
+            default: return 'bg-blue-100 text-blue-800 border-blue-200';
         }
     };
 
     const getStatusIcon = (status) => {
         switch (status) {
             case 'approved': 
-                return <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>;
+                return (
+                    <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                );
             case 'rejected':
-                return <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>;
+                return (
+                    <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                );
             case 'awaiting review':
-                return <svg className="w-4 h-4 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                </svg>;
+                return (
+                    <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                );
             case 'submitted':
             default:
-                return <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-                </svg>;
+                return (
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                );
         }
     };
 
-    // Extract documents array from paginated response
+    const getFileIcon = (fileName) => {
+        const ext = fileName?.split('.').pop()?.toLowerCase();
+        if (['pdf'].includes(ext)) {
+            return '📄';
+        } else if (['doc', 'docx'].includes(ext)) {
+            return '📝';
+        } else if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+            return '🖼️';
+        } else {
+            return '📎';
+        }
+    };
+
+    // Extract documents array
     const documentsArray = Array.isArray(documents) ? documents : (documents?.results || documents?.data || []);
-    const displayDocuments = expanded ? documentsArray : documentsArray?.slice(0, 5);
+    const displayDocuments = expanded ? documentsArray : documentsArray?.slice(0, 3); // Reduced to 3 for overview
 
     if (documentsLoading) {
         return (
-            <div className="bg-white shadow rounded-lg p-6 mt-5">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Documents</h2>
-                <div className="animate-pulse space-y-3">
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-gradient-to-br from-white to-gray-50/80 shadow-xl rounded-2xl p-6 border border-gray-100/60 backdrop-blur-sm mt-6"
+            >
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-indigo-600 bg-clip-text text-transparent mb-6">Documents</h2>
+                <div className="animate-pulse space-y-4">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gray-200 rounded"></div>
+                        <div key={i} className="flex items-center space-x-4 p-4 bg-white/50 rounded-xl border border-gray-100">
+                            <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
                             <div className="flex-1 space-y-2">
                                 <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                                 <div className="h-3 bg-gray-200 rounded w-1/2"></div>
@@ -160,163 +256,176 @@ const DocumentSection = ({ profile, expanded = false }) => {
                         </div>
                     ))}
                 </div>
-            </div>
+            </motion.div>
         );
     }
 
     return (
-        <div className="bg-white shadow rounded-lg p-6 mt-5">
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-medium text-gray-900">Documents</h2>
-                <div className="flex items-center space-x-2">
-                    {!expanded && documentsArray?.length > 5 && (
-                        <span className="text-sm text-gray-500">
-                            {documentsArray.length - 5} more
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-gradient-to-br from-white to-gray-50/80 shadow-xl rounded-2xl p-6 border border-gray-100/60 backdrop-blur-sm mt-6"
+        >
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-center mb-6 bg-gradient-to-r from-gray-800 to-indigo-600 bg-clip-text text-transparent inline-block [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]">
+                        Documents
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1">Manage your relocation documents</p>
+                </div>
+                <div className="flex items-center space-x-3">
+                    {!expanded && documentsArray?.length > 3 && (
+                        <span className="text-sm text-gray-500 bg-white/80 px-3 py-1 rounded-full border border-gray-200">
+                            +{documentsArray.length - 3} more
                         </span>
                     )}
-                    <button
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => setShowUploadModal(true)}
-                        className="bg-indigo-600 text-white px-3 py-2 rounded-md text-sm hover:bg-indigo-700 flex items-center"
+                        className="group bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl flex items-center space-x-2 text-sm md:text-base"
                     >
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                         </svg>
-                        Upload Document
-                    </button>
+                        <span className="hidden sm:inline">Upload Document</span>
+                        <span className="sm:hidden">Upload</span>
+                    </motion.button>
                 </div>
             </div>
 
             {!documentsArray || documentsArray.length === 0 ? (
-                <div className="text-center py-8">
-                    <div className="text-gray-400 mb-2">
-                        <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center py-8"
+                >
+                    <div className="relative inline-block mb-4">
+                        <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-2xl flex items-center justify-center mx-auto">
+                            <svg className="w-8 h-8 md:w-10 md:h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
                     </div>
-                    <p className="text-gray-500 mb-2">No documents uploaded yet</p>
-                    <p className="text-sm text-gray-400 mb-4">
+                    <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2">No Documents Yet</h3>
+                    <p className="text-gray-500 text-sm md:text-base max-w-md mx-auto mb-4">
                         Upload your relocation documents for consultant review
                     </p>
-                    <button
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => setShowUploadModal(true)}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm hover:bg-indigo-700"
+                        className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 md:px-8 md:py-3 rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl inline-flex items-center space-x-2 text-sm md:text-base"
                     >
-                        Upload Your First Document
-                    </button>
-                </div>
+                        <svg className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <span>Upload Your First Document</span>
+                    </motion.button>
+                </motion.div>
             ) : (
-                <div className="space-y-3">
-                    {displayDocuments.map((document) => (
-                        <div
+                <motion.div 
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className={`space-y-3 ${!expanded ? 'max-h-96 overflow-y-auto pr-2' : ''}`}
+                >
+                    {displayDocuments.map((document, index) => (
+                        <motion.div
                             key={document.id}
-                            className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50"
+                            variants={itemVariants}
+                            whileHover={{ scale: expanded ? 1.02 : 1.01 }}
+                            className="group bg-white/80 rounded-xl p-4 border border-gray-200/60 hover:border-indigo-300/50 shadow-sm hover:shadow-md transition-all duration-300"
                         >
-                            <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                                {getStatusIcon(document.status)}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                    {getStatusIcon(document.status)}
+                                    
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 gap-2 mb-2">
+                                            <h3 className="text-base font-semibold text-gray-900 truncate">
+                                                {document.document_type}
+                                            </h3>
+                                            <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(document.status)} self-start sm:self-auto`}>
+                                                {document.status}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="flex flex-col xs:flex-row xs:items-center xs:space-x-3 text-xs text-gray-600 gap-1 xs:gap-0">
+                                            <span className="flex items-center space-x-1">
+                                                <span className="text-sm">{getFileIcon(document.document_file)}</span>
+                                                <span>Document</span>
+                                            </span>
+                                            <span className="hidden xs:inline">•</span>
+                                            <span className="text-xs">Uploaded {new Date(document.created_at).toLocaleDateString()}</span>
+                                            {document.reviewed_by_name && (
+                                                <>
+                                                    <span className="hidden xs:inline">•</span>
+                                                    <span className="text-indigo-600 text-xs">Reviewed by {document.reviewed_by_name}</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-center space-x-1 ml-2">
+                                    <motion.a
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        href={document.document_file}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-8 h-8 md:w-10 md:h-10 bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center justify-center transition-colors duration-200 flex-shrink-0"
+                                        title="View Document"
+                                    >
+                                        <svg className="w-4 h-4 md:w-5 md:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </motion.a>
+                                    <motion.a
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        href={document.document_file}
+                                        download
+                                        className="w-8 h-8 md:w-10 md:h-10 bg-green-50 hover:bg-green-100 rounded-lg flex items-center justify-center transition-colors duration-200 flex-shrink-0"
+                                        title="Download Document"
+                                    >
+                                        <svg className="w-4 h-4 md:w-5 md:h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                    </motion.a>
+                                </div>
                             </div>
-                            
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-medium text-gray-900">
-                                    {document.document_type}
-                                </h3>
-                                <p className="text-sm text-gray-500">
-                                    Uploaded {new Date(document.created_at).toLocaleDateString()}
-                                </p>
-                                {document.reviewed_by_name && (
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        Reviewed by: {document.reviewed_by_name}
-                                    </p>
-                                )}
-                            </div>
-                            
-                            <div className="flex items-center space-x-2">
-                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(document.status)}`}>
-                                    {document.status}
-                                </span>
-                                <a
-                                    href={document.document_file}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-indigo-600 hover:text-indigo-800 p-1"
-                                    title="View Document"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                </a>
-                                <a
-                                    href={document.document_file}
-                                    download
-                                    className="text-indigo-600 hover:text-indigo-800 p-1"
-                                    title="Download Document"
-                                >
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                    </svg>
-                                </a>
-                            </div>
-                        </div>
+                        </motion.div>
                     ))}
-                </div>
+                </motion.div>
             )}
 
             {/* Enhanced Upload Modal */}
-            {showUploadModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Upload Document</h3>
-                        
-                        <form onSubmit={handleFileUpload} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Document Type *
-                                </label>
-                                <select
-                                    required
-                                    value={uploadForm.document_type}
-                                    onChange={(e) => handleInputChange('document_type', e.target.value)}
-                                    className="w-full p-2 border border-gray-300 rounded-md"
-                                >
-                                    <option value="">Select Document Type</option>
-                                    {documentTypes.map(type => (
-                                        <option key={type} value={type}>{type}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Document File *
-                                </label>
-                                <input
-                                    type="file"
-                                    required
-                                    onChange={handleFileChange}
-                                    className="w-full p-2 border border-gray-300 rounded-md"
-                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
-                                />
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Supported formats: PDF, Word, Images, Text files
-                                </p>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Description (Optional)
-                                </label>
-                                <textarea
-                                    value={uploadForm.description}
-                                    onChange={(e) => handleInputChange('description', e.target.value)}
-                                    rows="3"
-                                    className="w-full p-2 border border-gray-300 rounded-md"
-                                    placeholder="Add any notes about this document..."
-                                />
-                            </div>
-
-                            <div className="flex justify-end space-x-3 pt-4">
-                                <button
-                                    type="button"
+            <AnimatePresence>
+                {showUploadModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                    >
+                        <motion.div
+                            variants={modalVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            className="bg-white rounded-2xl p-6 md:p-8 w-full max-w-md md:max-w-lg shadow-2xl mx-4"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl md:text-2xl text-black font-light">
+                                    Upload Document
+                                </h3>
+                                <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
                                     onClick={() => {
                                         setShowUploadModal(false);
                                         setUploadForm({
@@ -325,24 +434,135 @@ const DocumentSection = ({ profile, expanded = false }) => {
                                             description: ''
                                         });
                                     }}
-                                    disabled={uploading}
-                                    className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+                                    className="text-gray-400 hover:text-gray-600 cursor-pointer transition-colors duration-200"
                                 >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={uploading || !uploadForm.document_file || !uploadForm.document_type}
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {uploading ? 'Uploading...' : 'Upload Document'}
-                                </button>
+                                    <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </motion.button>
                             </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-        </div>
+                            
+                            <form onSubmit={handleFileUpload} className="space-y-4 md:space-y-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Document Type *
+                                    </label>
+                                    <div className="relative">
+                                        <select
+                                            required
+                                            value={uploadForm.document_type}
+                                            onChange={(e) => handleInputChange('document_type', e.target.value)}
+                                            className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 text-black focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 appearance-none bg-white pr-10 cursor-pointer"
+                                        >
+                                            <option value="">Select Document Type</option>
+                                            {documentTypes.map(type => (
+                                                <option key={type} value={type}>{type}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Document File *
+                                    </label>
+                                    <motion.div
+                                        className={`border-2 border-dashed rounded-xl p-4 md:p-6 text-center transition-all duration-200 cursor-pointer ${
+                                            dragActive 
+                                                ? 'border-indigo-400 bg-indigo-50' 
+                                                : 'border-gray-300 hover:border-indigo-300'
+                                        }`}
+                                        onDragEnter={handleDrag}
+                                        onDragLeave={handleDrag}
+                                        onDragOver={handleDrag}
+                                        onDrop={handleDrop}
+                                        onClick={() => document.getElementById('file-input').click()}
+                                    >
+                                        <input
+                                            id="file-input"
+                                            type="file"
+                                            required
+                                            onChange={handleFileChange}
+                                            className="hidden"
+                                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                                        />
+                                        <div className="space-y-2 md:space-y-3">
+                                            <div className="w-10 h-10 md:w-12 md:h-12 bg-indigo-100 rounded-xl flex items-center justify-center mx-auto">
+                                                <svg className="w-5 h-5 md:w-6 md:h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-900">
+                                                    {uploadForm.document_file ? uploadForm.document_file.name : 'Click to upload or drag and drop'}
+                                                </p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    PDF, Word, Images, Text files (Max 10MB)
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Description (Optional)
+                                    </label>
+                                    <textarea
+                                        value={uploadForm.description}
+                                        onChange={(e) => handleInputChange('description', e.target.value)}
+                                        rows="3"
+                                        className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                                        placeholder="Add any notes or description about this document..."
+                                    />
+                                </div>
+
+                                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        type="button"
+                                        onClick={() => {
+                                            setShowUploadModal(false);
+                                            setUploadForm({
+                                                document_type: '',
+                                                document_file: null,
+                                                description: ''
+                                            });
+                                        }}
+                                        disabled={uploading}
+                                        className="px-4 py-2 md:px-6 md:py-3 text-sm text-gray-700 hover:text-gray-900 font-medium transition-colors duration-200"
+                                    >
+                                        Cancel
+                                    </motion.button>
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        type="submit"
+                                        disabled={uploading || !uploadForm.document_file || !uploadForm.document_type}
+                                        className="px-4 py-2 md:px-6 md:py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl disabled:hover:shadow-lg"
+                                    >
+                                        {uploading ? (
+                                            <div className="flex items-center space-x-2">
+                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                <span>Uploading...</span>
+                                            </div>
+                                        ) : (
+                                            'Upload Document'
+                                        )}
+                                    </motion.button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 };
 
