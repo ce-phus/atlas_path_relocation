@@ -6,6 +6,7 @@ import { logo } from '../assets';
 import { AiOutlineMenuUnfold } from "react-icons/ai";
 import { FaUser } from "react-icons/fa";
 import { getProfile } from '../actions/profileActions';
+import { GrClose } from "react-icons/gr";
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const dispatch = useDispatch();

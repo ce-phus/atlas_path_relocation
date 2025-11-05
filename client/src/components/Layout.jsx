@@ -11,18 +11,18 @@ const Layout = ({ children }) => {
 
   const { userInfo, isGuest } = useSelector((state) => state.userLoginReducer);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-        setSidebarOpen(false);
-      }
-    };
+  // useEffect(() => {
+  //   const handleClickOutside = (event) => {
+  //     if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+  //       setSidebarOpen(false);
+  //     }
+  //   };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  //   document.addEventListener('mousedown', handleClickOutside);
+  //   return () => {
+  //     document.removeEventListener('mousedown', handleClickOutside);
+  //   };
+  // }, []);
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
