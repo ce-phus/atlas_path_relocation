@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Layout, Skeleton, ProfileForm, DocumentSection, ConsultationSection, ProgressTracker, ProfileHeader, TasksSection } from '../components'
+import { Layout, Skeleton, ProfileForm, DocumentSection, ConsultationSection, ProgressTracker, ProfileHeader, TasksSection, Overview } from '../components'
 import { useDispatch, useSelector } from 'react-redux'
 import { loadProfile, getProfile, loadTasks, loadAvailableConsultants } from "../actions/profileActions"
 import { motion } from 'framer-motion'
@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 const Profile = () => {
     const dispatch = useDispatch();
     const { profile, error, loading } = useSelector((state) => state.getProfileReducer);
+    const { tasks } = useSelector((state)=> state.profileReducer)
     const [activeTab, setActiveTab] = useState('overview');
     console.log("profile in Profile UI: ", profile);
 
@@ -59,17 +60,7 @@ const Profile = () => {
                     {/* Tab Content */}
                     <div className='mt-6'>
                         {activeTab === 'overview' && (
-                            <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-                                <div className='lg:col-span-2'>
-                                    <ProgressTracker profile={profile} />
-                                    <TasksSection profile={profile} expanded={false}/>
-                                </div>
-
-                                <div className='lg:col-span-1'>
-                                    <ConsultationSection profile={profile} />
-                                    <DocumentSection profile={profile} expanded={false} />
-                                </div>
-                            </div>
+                            <Overview profile={profile} tasks={tasks}/>
                         )}
                         {activeTab === 'edit' && (
                             <ProfileForm profile={profile} />

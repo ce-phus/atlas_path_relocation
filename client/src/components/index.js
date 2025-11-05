@@ -6,8 +6,9 @@ import Skeleton from "./Skeleton";
 import ProgressTracker from "./ProgressTracker";
 import ProfileHeader from "./ProfileHeader";
 import TasksSection from "./TasksSection";
-import Overview from "./Skeletons/Overview";
 import EditLoader from "./Skeletons/EditLoader";
+import Overview from "./Overview";
+import OverdueTasks from "./OverdueTasks";
 
 export {
     Layout,
@@ -19,5 +20,6 @@ export {
     ProfileHeader,
     TasksSection,
     Overview,
-    EditLoader
+    EditLoader,
+    OverdueTasks
 }
