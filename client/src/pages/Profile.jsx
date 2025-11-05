@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Layout, Skeleton, ProfileForm, DocumentSection, ConsultationSection, ProgressTracker, ProfileHeader, TasksSection, Overview } from '../components'
+import { Layout, Skeleton, ProfileForm, DocumentSection, ConsultationSection, ProgressTracker, ProfileHeader, TasksSection, Overview, ProfileAbout } from '../components'
 import { useDispatch, useSelector } from 'react-redux'
 import { loadProfile, getProfile, loadTasks, loadAvailableConsultants } from "../actions/profileActions"
 import { motion } from 'framer-motion'
@@ -37,6 +37,7 @@ const Profile = () => {
                         <nav className='-mb-px flex space-x-8'>
                             {[
                                 { name: 'Overview', id: 'overview' },
+                                { name: 'About', id: 'about' },
                                 { name: 'Edit Profile', id: 'edit' },
                                 { name: 'Documents', id: 'documents' },
                                 { name: 'Consultant', id: 'consultant' },
@@ -61,6 +62,9 @@ const Profile = () => {
                     <div className='mt-6'>
                         {activeTab === 'overview' && (
                             <Overview profile={profile} tasks={tasks}/>
+                        )}
+                        {activeTab === 'about' && (
+                            <ProfileAbout profile={profile} />
                         )}
                         {activeTab === 'edit' && (
                             <ProfileForm profile={profile} />
