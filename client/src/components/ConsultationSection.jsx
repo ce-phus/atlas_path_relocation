@@ -1,4 +1,3 @@
-// components/ConsultationSection.jsx
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { assignConsultant, loadAvailableConsultants } from '../actions/profileActions';
@@ -12,6 +11,7 @@ const ConsultationSection = ({ profile, expanded = false }) => {
 
     const handleAssignConsultant = () => {
         if (selectedConsultant) {
+            console.log("Assigning Consultant ID: ", selectedConsultant);
             dispatch(assignConsultant(selectedConsultant));
             setShowAssignModal(false);
             setSelectedConsultant('');
@@ -30,7 +30,7 @@ const ConsultationSection = ({ profile, expanded = false }) => {
                 {!profile?.relocation_consultant && (
                     <button
                         onClick={loadConsultants}
-                        className="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-700"
+                        className="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm hover:bg-indigo-700 cursor-pointer"
                     >
                         Assign Consultant
                     </button>
@@ -111,7 +111,7 @@ const ConsultationSection = ({ profile, expanded = false }) => {
                     </p>
                     <button
                         onClick={loadConsultants}
-                        className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md text-sm hover:bg-indigo-700"
+                        className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md text-sm hover:bg-indigo-700 cursor-pointer"
                     >
                         Find a Consultant
                     </button>
@@ -132,9 +132,9 @@ const ConsultationSection = ({ profile, expanded = false }) => {
                         ) : consultants.length > 0 ? (
                             <div className="space-y-3 max-h-60 overflow-y-auto">
                                 {consultants.map(consultant => (
-                                    <div
+                                    <button
                                         key={consultant.id}
-                                        className={`p-3 border rounded-lg cursor-pointer ${
+                                        className={`p-3 border rounded-lg cursor-pointer w-full cursor-pointer ${
                                             selectedConsultant === consultant.id
                                                 ? 'border-indigo-500 bg-indigo-50'
                                                 : 'border-gray-200 hover:border-indigo-300'
@@ -156,7 +156,7 @@ const ConsultationSection = ({ profile, expanded = false }) => {
                                                 </p>
                                             </div>
                                         </div>
-                                    </div>
+                                    </button>
                                 ))}
                             </div>
                         ) : (
@@ -166,14 +166,14 @@ const ConsultationSection = ({ profile, expanded = false }) => {
                         <div className="mt-4 flex justify-end space-x-3">
                             <button
                                 onClick={() => setShowAssignModal(false)}
-                                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+                                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 cursor-pointer"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleAssignConsultant}
                                 disabled={!selectedConsultant}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 disabled:opacity-50"
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 disabled:opacity-50 cursor-pointer"
                             >
                                 Assign
                             </button>

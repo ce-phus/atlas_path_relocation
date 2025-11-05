@@ -41,7 +41,7 @@ export const profileReducer = (state = initialState, action) => {
             return { ...state, loading: true, error: null };
         case "AVAILABLE_CONSULTANTS_LOAD_SUCCESS":
             return { ...state, loading: false, consultants: action.payload, error: null };
-        case "AVAILABLE_CONSULTANTS_LOAD_SUCCESS":
+        case "AVAILABLE_CONSULTANTS_LOAD_FAIL":
             return { ...state, loading: false, error: action.payload };
 
         // === DOCUMENTS ===

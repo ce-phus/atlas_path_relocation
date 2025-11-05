@@ -60,6 +60,7 @@ class ProfileViewset(viewsets.ModelViewSet):
     filterset_fields = ["relocation_type","current_country", "destination_country", "has_children"]
     search_fields = ["user__first_name", "user__last_name", "user__email"]
     ordering_fields = ["overall_progress", "created_at"]
+    lookup_field = "id"
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -93,26 +94,34 @@ class ProfileViewset(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
-    def assign_consultant(self, request, pk=None):
-        profile = self.get_object()
-        consultant_id = request.data.get("consultant_id")
+    def assign_consultant(self, request, id=None):
+        # 1) Find profile by pk (explicit lookup)
+        try:
+            profile = Profile.objects.get(id=id)
+        except Profile.DoesNotExist:
+            return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        user = request.user
+        is_owner = hasattr(user, "profile") and user.profile.id == profile.id
+        if not (user.is_staff or is_owner):
+            return Response({"error": "You do not have permission to modify this profile."},status=status.HTTP_403_FORBIDDEN)
+
+        consultant_id = request.data.get("consultant_id")
         try:
             consultant = Consultant.objects.get(id=consultant_id, is_active=True)
-            if consultant.current_client_count >= consultant.max_clients:
-                return Response({"error": "Consultant has reached maximum client capacity."}, status=status.HTTP_400_BAD_REQUEST)
-            
-            profile.relocation_consultant = consultant
-            profile.save()
-
-            consultant.current_client_count = consultant.assigned_clients.count()
-            consultant.save()
-
-            return Response({"status": "Consultant assigned successfully."}, status=status.HTTP_200_OK)
-
-            # Update consultant's client count
         except Consultant.DoesNotExist:
             return Response({"error": "Consultant not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if consultant.current_client_count >= consultant.max_clients:
+            return Response({"error": "Consultant has reached maximum client capacity."}, status=status.HTTP_400_BAD_REQUEST)
+
+        profile.relocation_consultant = consultant
+        profile.save()
+
+        consultant.current_client_count = consultant.assigned_clients.count()
+        consultant.save()
+
+        return Response({"status": "Consultant assigned successfully."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"])   
     def update_progress(self, request, pk=None):

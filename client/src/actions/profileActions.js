@@ -155,10 +155,12 @@ export const assignConsultant = (consultantId) => async(dispatch, getState) => {
     try {
         dispatch({ type: "ASSIGN_CONSULTANT_REQUEST" });
 
-        const { profile } = getState();
-        const profileId = profile.profile?.id;
+        const { getProfileReducer } = getState();
+        const profileId = getProfileReducer.profile?.id;
         console.log("profile id: ", profileId);
         const authHeaders = getAuthHeaders(getState);
+        
+        console.log("Sending request to:", `${API_URL}/api/v1/profile/profiles/${profileId}/assign_consultant/`);
 
         const { data } = await axios.post(
             `${API_URL}/api/v1/profile/profiles/${profileId}/assign_consultant/`,
@@ -166,11 +168,12 @@ export const assignConsultant = (consultantId) => async(dispatch, getState) => {
             authHeaders
         )
         console.log("Consultant assigned:", data);
-
+        loadAvailableConsultants();
         dispatch({
             type: "ASSIGN_CONSULTANT_SUCCESS",
             payload: data,
         })
+    
     } catch(error) {
         dispatch({
             type: "ASSIGN_CONSULTANT_FAIL",
