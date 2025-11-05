@@ -30,11 +30,11 @@ const Profile = () => {
             ): error ? (
                 <div>{error}</div>
             ): (
-                <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+                <div className='md:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 max-w-sm'>
                     <ProfileHeader profile={profile} />
 
                     <div className='mt-6 border-b border-gray-300'>
-                        <nav className='-mb-px flex space-x-8'>
+                        <nav className='-mb-px flex space-x-8  overflow-x-auto md:w-full w-full custom-scrollbar'>
                             {[
                                 { name: 'Overview', id: 'overview' },
                                 { name: 'About', id: 'about' },

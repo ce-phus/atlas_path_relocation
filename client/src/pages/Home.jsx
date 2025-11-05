@@ -45,7 +45,7 @@ const Home = () => {
   return (
     <Layout>
       <div className='min-h-screen bg-white py-8'>
-        <div className='max-w-7xl mx-auto sm:px-6 lg:px-8'>
+        <div className='md:max-w-7xl mx-auto sm:px-6 lg:px-8 max-w-xl'>
           <div className='mb-8 bg-gradient-to-r from-indigo-700 to-indigo-200 p-3 rounded-lg'>
             <h1 className='text-3xl font-light text-white'>Welcome Back, {profile?.full_name}!</h1>
             <p className='mt-1'>{profile?.email}</p>
@@ -53,7 +53,7 @@ const Home = () => {
               <span className='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800'>
                 {profile?.relocation_type?.replace('_', ' ') || 'No relocation type set'}
               </span>
-              <span className='inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 ml-2'>
+              <span className='inline-flex items-center px-3 py-1 mt-2 rounded-full text-sm font-medium bg-green-100 text-green-800 ml-2'>
                Your Relocation to Surrey is {profile?.overall_progress}% Complete
               </span>
             </div>
