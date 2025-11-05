@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Layout, Skeleton, ProfileForm, DocumentSection, ConsultationSection, ProgressTracker, ProfileHeader, TasksSection, Overview, ProfileAbout } from '../components'
 import { useDispatch, useSelector } from 'react-redux'
-import { loadProfile, getProfile, loadTasks, loadAvailableConsultants } from "../actions/profileActions"
+import { loadProfile, getProfile, loadTasks, loadAvailableConsultants, loadDocuments } from "../actions/profileActions"
 import { motion } from 'framer-motion'
 
 const Profile = () => {
@@ -9,13 +9,13 @@ const Profile = () => {
     const { profile, error, loading } = useSelector((state) => state.getProfileReducer);
     const { tasks } = useSelector((state)=> state.profileReducer)
     const [activeTab, setActiveTab] = useState('overview');
-    console.log("profile in Profile UI: ", profile);
 
     useEffect(()=> {
         if (!profile) {
             dispatch(getProfile());
             dispatch(loadProfile());
             dispatch(loadTasks());
+            dispatch(loadDocuments());
 
             if (profile?.relocation_consultant) {
                 dispatch(loadAvailableConsultants());

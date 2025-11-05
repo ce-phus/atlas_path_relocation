@@ -207,30 +207,27 @@ export const updateProfileProgress = (progressData) => async(dispatch, getState)
     }
 }
 
-export const loadDocuments = () => async(dispatch, getState) => {
+export const loadDocuments = (profileId) => async (dispatch, getState) => {
     try {
         dispatch({ type: "DOCUMENTS_LOAD_REQUEST" });
 
         const authHeaders = getAuthHeaders(getState);
-
-        const {data} = await axios.get(`${API_URL}/api/v1/profile/documents/`, authHeaders);
-
-        console.log("Documents loaded:", data);
+        const { data } = await axios.get(
+            `${API_URL}/api/v1/profile/documents/`,
+            authHeaders
+        );
 
         dispatch({
             type: "DOCUMENTS_LOAD_SUCCESS",
             payload: data,
-        })
-    } catch(error) {
+        });
+    } catch (error) {
         dispatch({
             type: "DOCUMENTS_LOAD_FAIL",
-            payload: error.response && error.response.data.detail
-                ? error.response.data.detail
-                : error.message,
+            payload: error.response?.data?.detail || error.message,
         });
     }
-}
-
+};
 export const uploadDocument = (documentData) => async(dispatch, getState) => {
     try {
         dispatch({ type: "DOCUMENT_UPLOAD_REQUEST" });
