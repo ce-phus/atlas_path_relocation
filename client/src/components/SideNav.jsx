@@ -215,8 +215,6 @@ const SideNav = React.forwardRef(({ isSidebarOpen }, ref) => {
           })}
         </nav>
 
-        {/* Consultant Info Section */}
-
         {isSidebarOpen && (
           <div className={`
           mt-8 mx-3 p-4 bg-gray-50 rounded-lg border border-gray-200
@@ -243,9 +241,7 @@ const SideNav = React.forwardRef(({ isSidebarOpen }, ref) => {
             </div>
           </div>
         </div>
-        )}
-        
-        
+        )}  
       </div>
       
       {isSidebarOpen && (
