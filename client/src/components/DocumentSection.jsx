@@ -280,7 +280,7 @@ const DocumentSection = ({ profile, expanded = false }) => {
                             +{documentsArray.length - 3} more
                         </span>
                     )}
-                    <motion.button
+                    {/* <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setShowUploadModal(true)}
@@ -291,7 +291,7 @@ const DocumentSection = ({ profile, expanded = false }) => {
                         </svg>
                         <span className="hidden sm:inline">Upload Document</span>
                         <span className="sm:hidden">Upload</span>
-                    </motion.button>
+                    </motion.button> */}
                 </div>
             </div>
 

@@ -136,7 +136,7 @@ const ConsultationSection = ({ profile, expanded = false }) => {
                     </h2>
                     <p className="text-sm text-gray-500 mt-1">Your dedicated relocation expert</p>
                 </div>
-                {!profile?.relocation_consultant && (
+                {/* {!profile?.relocation_consultant && (
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -148,7 +148,7 @@ const ConsultationSection = ({ profile, expanded = false }) => {
                         </svg>
                         <span>Find Consultant</span>
                     </motion.button>
-                )}
+                )} */}
             </div>
 
             {profile?.relocation_consultant ? (

@@ -105,12 +105,18 @@ export const loadProfile = () => async(dispatch, getState) => {
     }
 }
 
-export const updateProfile = (profileData) => async(dispatch, getState) => {
+export const updateProfile = (profileData, id) => async(dispatch, getState) => {
     try {
         dispatch({ type: "PROFILE_UPDATE_REQUEST" });
         const authHeaders = getAuthHeaders(getState);
 
-        const {data} = await axios.patch(`${API_URL}/api/v1/profiles/update/`, profileData, authHeaders);
+        const cleanedData = Object.fromEntries(
+            Object.entries(profileData)
+              .filter(([_, v]) => v !== "" && v !== undefined)
+              .map(([k, v]) => [k, typeof v === "boolean" ? v : v])
+          );
+
+        const {data} = await axios.patch(`${API_URL}/api/v1/profile/profiles/${id}/`, cleanedData, authHeaders);
 
         console.log("Profile data updated:", data);
 
@@ -118,7 +124,10 @@ export const updateProfile = (profileData) => async(dispatch, getState) => {
             type: "PROFILE_UPDATE_SUCCESS",
             payload: data,
         })
+
+        dispatch(loadProfile());
     } catch(error) {
+        console.log("Error: ", error)
         dispatch({
             type: "PROFILE_UPDATE_FAIL",
             payload: error.response && error.response.data.detail
