@@ -133,3 +133,44 @@ export const documentStatusReducer = (state = { overview: {}, loading: false }, 
             return state;
     }
 };
+
+export const taskSearchReducer = (state = { tasks: [] }, action) => {
+    switch (action.type) {
+        case "TASK_SEARCH_REQUEST":
+            return { ...state, loading: true };
+        case "TASK_SEARCH_SUCCESS":
+            return { loading: false, tasks: action.payload };
+        case "TASK_SEARCH_FAIL":
+            return { loading: false, error: action.payload };
+        default:
+            return state;
+    }
+}
+
+export const taskDueOverviewReducer = (state = { overview: {}, loading: false }, action) => {
+    switch (action.type) {
+        case "TASK_DUE_OVERVIEW_REQUEST":
+            return {
+                ...state,
+                loading: true,
+                error: null,
+            };
+
+        case "TASK_DUE_OVERVIEW_SUCCESS":
+            return {
+                ...state,
+                loading: false,
+                tasks: action.payload, 
+            };
+
+        case "TASK_DUE_OVERVIEW_FAIL":
+            return {
+                ...state,
+                loading: false,
+                error: action.payload,
+            };
+
+        default:
+            return state;
+    }
+};

@@ -16,6 +16,11 @@ from .serializers import (
 from django.db import models
 from rest_framework.views import APIView
 
+from django.core.paginator import Paginator
+from datetime import datetime
+from django.utils import timezone
+
+
 class ConsultantViewset(viewsets.ModelViewSet):
     queryset = Consultant.objects.select_related('user').all()
     permission_classes = [permissions.IsAuthenticated]
@@ -392,4 +397,106 @@ class DocumentStatusOverviewAPIView(APIView):
             "status_overview": list(status_count),
             "consultant_overview": consultant_data
         }, status=status.HTTP_200_OK)
+    
+class TaskSearchAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        query = request.query_params.get('q', '')
+        user = request.user
+
+        if hasattr(user, 'consultant_profile'):
+            tasks = Task.objects.filter(
+                profile__relocation_consultant=user.consultant_profile,
+                title__icontains=query
+            )
+        elif hasattr(user, 'profile'):
+            tasks = Task.objects.filter(
+                profile__user=user,
+                title__icontains=query
+            )
+        elif user.is_staff:
+            tasks = Task.objects.filter(title__icontains=query)
+        else:
+            return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = TaskSerializer(tasks, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class TaskDueOverviewAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            user = request.user
+            filter_type = request.query_params.get('filter', 'all')  # New parameter for filter type
+            search_query = request.query_params.get('q', '')  # Search query parameter
+            page = request.query_params.get('page', 1)
+            page_size = request.query_params.get('page_size', 10)
+
+            # Base queryset based on user role
+            if hasattr(user, "consultant_profile"):
+                consultant = user.consultant_profile
+                tasks = Task.objects.filter(profile__relocation_consultant=consultant)
+            elif hasattr(user, "profile"):
+                tasks = Task.objects.filter(profile__user=user)
+            else:
+                return Response({
+                    "total_tasks": 0,
+                    "page": 1,
+                    "total_pages": 0,
+                    "has_next": False,
+                    "has_previous": False,
+                    "due_overview": [],
+                    "tasks": [],
+                }, status=status.HTTP_200_OK)
+
+            # Apply search filter if query provided
+            if search_query:
+                tasks = tasks.filter(
+                    models.Q(title__icontains=search_query) |
+                    models.Q(description__icontains=search_query)
+                )
+
+            # Apply filter type
+            if filter_type == 'completed':
+                tasks = tasks.filter(is_completed=True)
+            elif filter_type == 'pending':
+                tasks = tasks.filter(is_completed=False)
+            elif filter_type == 'overdue':
+                today = timezone.now().date()
+                tasks = tasks.filter(is_completed=False, due_date__lt=today)
+            # 'all' - no additional filtering needed
+
+            # Apply pagination
+            paginator = Paginator(tasks.order_by('due_date'), page_size)
+            paginated_tasks = paginator.get_page(page)
+
+            serializer = TaskSerializer(paginated_tasks, many=True)
+
+            # Aggregate overview (for all tasks, not just paginated)
+            due_count = (
+                tasks.values('due_date')
+                .annotate(count=models.Count('id'))
+                .order_by('due_date')
+            )
+            total_tasks = tasks.count()
+
+            return Response({
+                "total_tasks": total_tasks,
+                "page": paginated_tasks.number,
+                "total_pages": paginator.num_pages,
+                "has_next": paginated_tasks.has_next(),
+                "has_previous": paginated_tasks.has_previous(),
+                "due_overview": list(due_count),
+                "tasks": serializer.data,
+                "filter_type": filter_type,  # Return the applied filter for frontend
+                "search_query": search_query,  # Return the search query for frontend
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(f"Unexpected error in TaskDueOverviewAPIView: {e}")
+            import traceback
+            traceback.print_exc()
+            return Response({"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

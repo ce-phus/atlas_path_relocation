@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ConsultantViewset, ProfileViewset, DocumentViewset, TaskViewset, GetProfileAPIView, DocumentSearchAPIView, DocumentStatusOverviewAPIView
+from .views import ConsultantViewset, ProfileViewset, DocumentViewset, TaskViewset, GetProfileAPIView, DocumentSearchAPIView, DocumentStatusOverviewAPIView, TaskSearchAPIView, TaskDueOverviewAPIView
 
 router = DefaultRouter()
 router.register(r'consultants', ConsultantViewset, basename='consultant')
@@ -13,4 +13,6 @@ urlpatterns = [
     path('get_profile/', GetProfileAPIView.as_view(), name='get_profile'),
     path('search_documents/', DocumentSearchAPIView.as_view(), name='search_documents'),
     path('document_status_overview/', DocumentStatusOverviewAPIView.as_view(), name='document_status_overview'),
+    path('search_tasks/', TaskSearchAPIView.as_view(), name='search_tasks'),
+    path('task_due_overview/', TaskDueOverviewAPIView.as_view(), name='task_due_overview'),
 ]

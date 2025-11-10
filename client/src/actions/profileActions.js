@@ -490,3 +490,71 @@ export const documentStatus = (statusFilter = "") => async (dispatch, getState) 
         });
     }
 };
+
+export const taskSearch = (query) => async (dispatch, getState) => {
+    try {
+        dispatch({ type: "TASK_SEARCH_REQUEST" });
+
+        const authHeaders = getAuthHeaders(getState);
+
+        const { data } = await axios.get(
+            `${API_URL}/api/v1/profile/search_tasks/?q=${encodeURIComponent(query)}`,
+            authHeaders
+        );
+
+        console.log("Task search results:", data);
+
+        dispatch({
+            type: "TASK_SEARCH_SUCCESS",
+            payload: data,
+        });
+    } catch (error) {
+        console.error("Error searching tasks:", error);
+
+        dispatch({
+            type: "TASK_SEARCH_FAIL",
+            payload:
+                error.response && error.response.data.detail
+                    ? error.response.data.detail
+                    : error.message,
+        });
+    }
+}
+
+export const taskDueOverview = (filters = {}) => async (dispatch, getState) => {
+    try {
+        dispatch({ type: "TASK_DUE_OVERVIEW_REQUEST" });
+
+        const authHeaders = getAuthHeaders(getState);
+        const params = new URLSearchParams();
+
+        // Add all possible filter parameters
+        if (filters.filter) params.append("filter", filters.filter);
+        if (filters.q) params.append("q", filters.q);
+        if (filters.due) params.append("due", filters.due);
+        if (filters.start) params.append("start", filters.start);
+        if (filters.end) params.append("end", filters.end);
+        if (filters.page) params.append("page", filters.page);
+        if (filters.page_size) params.append("page_size", filters.page_size);
+
+        const baseUrl = `${API_URL}/api/v1/profile/task_due_overview/`;
+        const queryString = params.toString();
+        const url = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+
+        console.log("Fetching Task Due Overview:", url);
+
+        const { data } = await axios.get(url, authHeaders);
+
+        dispatch({
+            type: "TASK_DUE_OVERVIEW_SUCCESS",
+            payload: data,
+        });
+    } catch (error) {
+        console.error("Error fetching task due overview:", error);
+
+        dispatch({
+            type: "TASK_DUE_OVERVIEW_FAIL",
+            payload: error.response?.data?.detail || error.message,
+        });
+    }
+};

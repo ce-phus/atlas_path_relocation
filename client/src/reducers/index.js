@@ -12,7 +12,9 @@ import {
     profileReducer,
     getProfileReducer,
     documentSearchReducer,
-    documentStatusReducer
+    documentStatusReducer,
+    taskSearchReducer,
+    taskDueOverviewReducer
 } from "./profileReducers"
 
 import {
@@ -30,6 +32,8 @@ const allReducers = combineReducers({
     getProfileReducer,
     documentSearchReducer,
     documentStatusReducer,
+    taskSearchReducer,
+    taskDueOverviewReducer,
 
     progressReducer,
 });
