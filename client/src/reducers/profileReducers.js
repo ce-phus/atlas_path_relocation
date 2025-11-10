@@ -104,3 +104,32 @@ export const getProfileReducer = (state = initialState, action) => {
             return state;
     }
 };
+
+export const documentSearchReducer = (state = { documents: [] }, action) => {
+    switch (action.type) {
+        case "DOCUMENT_SEARCH_REQUEST":
+            return { ...state, loading: true };
+        case "DOCUMENT_SEARCH_SUCCESS":
+            return { loading: false, documents: action.payload };
+        case "DOCUMENT_SEARCH_FAIL":
+            return { loading: false, error: action.payload };
+        default:
+            return state;
+    }
+}
+
+export const documentStatusReducer = (state = { overview: {}, loading: false }, action) => {
+    switch (action.type) {
+        case "DOCUMENT_STATUS_REQUEST":
+            return { ...state, loading: true };
+
+        case "DOCUMENT_STATUS_SUCCESS":
+            return { loading: false, overview: action.payload };
+
+        case "DOCUMENT_STATUS_FAIL":
+            return { loading: false, error: action.payload };
+
+        default:
+            return state;
+    }
+};

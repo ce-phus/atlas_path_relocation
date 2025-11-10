@@ -304,4 +304,92 @@ class GetProfileAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Profile.DoesNotExist:
             return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+class DocumentSearchAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        query = request.query_params.get('q', '')
+        user = request.user
+
+        if hasattr(user, 'consultant_profile'):
+            documents = Document.objects.filter(
+                profile__relocation_consultant=user.consultant_profile,
+                document_type__icontains=query
+            )
+        elif hasattr(user, 'profile'):
+            documents = Document.objects.filter(
+                profile__user=user,
+                document_type__icontains=query
+            )
+        elif user.is_staff:
+            documents = Document.objects.filter(document_type__icontains=query)
+        else:
+            return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = DocumentSerializer(documents, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class DocumentStatusOverviewAPIView(APIView):
+    def get(self, request):
+        user =self.request.user
+        status_filter = request.query_params.get('status', None)
+
+        documents = Document.objects.all()
+
+        if hasattr(user, "consultant_profile"):
+            consulant = user.consultant_profile
+            documents = documents.filter(reviewed_by=consulant)
+
+        elif hasattr(user, "profile"):
+            documents = documents.filter(profile__user=user)
+        else:
+            return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
+
+        if status_filter:
+            documents = Document.objects.filter(status=status_filter)
+            serializer = DocumentSerializer(documents, many=True)
+            return Response({
+                "status": status_filter,
+                "documents": serializer.data,
+                "count": documents.count()
+            }, status=status.HTTP_200_OK)
+        
+        status_count = (
+            Document.objects
+            .values('status')
+            .annotate(count=models.Count('id'))
+            .order_by('status')
+        )
+        total_documents = Document.objects.count()
+
+        consultant_data = []
+
+        consultants = Consultant.objects.select_related('user').all()
+
+        if user.is_staff or user.is_superuser:
+            for consultant in consultants:
+                consultant_docs = Document.objects.filter(reviewed_by=consultant)
+                consultant_counts ={
+                    consultant_docs.values('status')
+                    .annotate(count=models.Count('id'))
+                    .order_by('status')
+                }
+
+                consultant_data.append({
+                    "consultant_id": consultant.id,
+                    "consultant_name": consultant.user.get_full_name(),
+                    "document_counts": list(consultant_counts),
+                    "employee_id": consultant.employee_id,
+                    "specialization": consultant.specialization,
+                    "status_breakdown": consultant_counts,
+                    "total_reviewed": consultant_docs.count()
+                })
+
+        return Response({
+            "total_documents": total_documents,
+            "status_overview": list(status_count),
+            "consultant_overview": consultant_data
+        }, status=status.HTTP_200_OK)
 

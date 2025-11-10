@@ -1,19 +1,28 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Layout } from '../components'
-import { loadDocuments, uploadDocument } from '../actions/profileActions'
+import { uploadDocument, documentSearch, documentStatus } from '../actions/profileActions'
 import { motion, AnimatePresence } from 'framer-motion'
 import Skeleton from "react-loading-skeleton"
 
 const Documents = () => {
     const dispatch = useDispatch();
-    const { documents, documentsLoading, documentsError } = useSelector(state => state.profileReducer);
+    const { 
+        documents, 
+        documentsLoading, 
+        documentsError,
+        documentSearchResults,
+        documentSearchLoading,
+        documentStatusData,
+        documentStatusLoading 
+    } = useSelector(state => state.profileReducer);
+    
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [dragActive, setDragActive] = useState(false);
     const [filter, setFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
-    const [isSearching, setIsSearching] = useState(false);
+    const [searchTimeout, setSearchTimeout] = useState(null);
 
     // Form state for document upload
     const [uploadForm, setUploadForm] = useState({
@@ -41,22 +50,101 @@ const Documents = () => {
         'Other'
     ];
 
+    // Debounced search function
+    const debouncedSearch = useCallback((query) => {
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        
+        if (query.trim() === '') {
+            // If search is cleared, load all documents
+            dispatch(documentStatus());
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            dispatch(documentSearch(query));
+        }, 500);
+
+        setSearchTimeout(timeout);
+    }, [searchTimeout, dispatch]);
+
+    // Handle search input change
+    const handleSearchChange = (value) => {
+        setSearchTerm(value);
+        debouncedSearch(value);
+    };
+
+    // Handle status filter change
+    const handleFilterChange = (status) => {
+        setFilter(status);
+        if (status === 'all') {
+            dispatch(documentStatus());
+        } else {
+            dispatch(documentStatus(status));
+        }
+    };
+
+    // Load initial documents
     useEffect(() => {
-        dispatch(loadDocuments());
+        dispatch(documentStatus());
     }, [dispatch]);
 
-    // Debounced search effect
+    // Cleanup timeout on unmount
     useEffect(() => {
+        return () => {
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+        };
+    }, [searchTimeout]);
+
+    // Determine which documents to display
+    const getDisplayDocuments = () => {
         if (searchTerm.trim() !== '') {
-            setIsSearching(true);
-            const timer = setTimeout(() => {
-                setIsSearching(false);
-            }, 500);
-            return () => clearTimeout(timer);
-        } else {
-            setIsSearching(false);
+            return documentSearchResults || [];
         }
-    }, [searchTerm]);
+        
+        if (filter !== 'all' && documentStatusData?.documents) {
+            return documentStatusData.documents;
+        }
+        
+        // Default: all documents from status overview
+        const documentsArray = Array.isArray(documents) ? documents : (documents?.results || documents?.data || []);
+        return documentsArray;
+    };
+
+    // Get status counts from status overview data
+    const getStatusCounts = () => {
+        if (documentStatusData?.status_overview) {
+            const statusCounts = {
+                approved: 0,
+                submitted: 0,
+                'awaiting review': 0,
+                rejected: 0,
+                total: documentStatusData.total_documents || 0
+            };
+
+            documentStatusData.status_overview.forEach(item => {
+                statusCounts[item.status] = item.count;
+            });
+
+            return statusCounts;
+        }
+
+        // Fallback to client-side calculation
+        const documentsArray = Array.isArray(documents) ? documents : (documents?.results || documents?.data || []);
+        return {
+            approved: documentsArray.filter(doc => doc.status === 'approved').length,
+            submitted: documentsArray.filter(doc => doc.status === 'submitted').length,
+            'awaiting review': documentsArray.filter(doc => doc.status === 'awaiting review').length,
+            rejected: documentsArray.filter(doc => doc.status === 'rejected').length,
+            total: documentsArray.length
+        };
+    };
+
+    const statusCounts = getStatusCounts();
+    const displayDocuments = getDisplayDocuments();
 
     // Animation variants
     const containerVariants = {
@@ -130,6 +218,8 @@ const Documents = () => {
                 document_file: null,
                 description: ''
             });
+            // Reload documents after upload
+            dispatch(documentStatus());
         } catch (error) {
             console.error('Upload failed:', error);
             alert('Upload failed. Please try again.');
@@ -254,28 +344,8 @@ const Documents = () => {
         }
     };
 
-    // Extract documents array
-    const documentsArray = Array.isArray(documents) ? documents : (documents?.results || documents?.data || []);
-    
-    // Filter and search documents
-    const filteredDocuments = documentsArray.filter(document => {
-        const matchesSearch = document.document_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             document.document_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             document.client_name?.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        const matchesFilter = 
-            filter === 'all' ? true :
-            filter === 'approved' ? document.status === 'approved' :
-            filter === 'pending' ? document.status === 'submitted' || document.status === 'awaiting review' :
-            filter === 'rejected' ? document.status === 'rejected' : true;
-        
-        return matchesSearch && matchesFilter;
-    });
-
-    const approvedCount = documentsArray.filter(doc => doc.status === 'approved').length;
-    const pendingCount = documentsArray.filter(doc => doc.status === 'submitted' || doc.status === 'awaiting review').length;
-    const rejectedCount = documentsArray.filter(doc => doc.status === 'rejected').length;
-    const totalCount = documentsArray.length;
+    // Check if we're currently loading data
+    const isLoading = documentsLoading || documentSearchLoading || documentStatusLoading;
 
     // Search loading skeleton
     const SearchLoadingSkeleton = () => (
@@ -298,7 +368,7 @@ const Documents = () => {
         </div>
     );
 
-    if (documentsLoading) {
+    if (isLoading && !displayDocuments.length) {
         return (
             <Layout>
                 <div className="min-h-screen bg-white py-8">
@@ -361,7 +431,7 @@ const Documents = () => {
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => dispatch(loadDocuments())}
+                                onClick={() => dispatch(documentStatus())}
                                 className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl"
                             >
                                 Try Again
@@ -399,19 +469,19 @@ const Documents = () => {
                         className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
                     >
                         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 shadow-sm">
-                            <div className="text-2xl font-bold text-indigo-600">{totalCount}</div>
+                            <div className="text-2xl font-bold text-indigo-600">{statusCounts.total}</div>
                             <div className="text-sm text-gray-500">Total Documents</div>
                         </div>
                         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 shadow-sm">
-                            <div className="text-2xl font-bold text-green-600">{approvedCount}</div>
+                            <div className="text-2xl font-bold text-green-600">{statusCounts.approved}</div>
                             <div className="text-sm text-gray-500">Approved</div>
                         </div>
                         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 shadow-sm">
-                            <div className="text-2xl font-bold text-amber-600">{pendingCount}</div>
+                            <div className="text-2xl font-bold text-amber-600">{statusCounts.submitted + statusCounts['awaiting review']}</div>
                             <div className="text-sm text-gray-500">Pending Review</div>
                         </div>
                         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 shadow-sm">
-                            <div className="text-2xl font-bold text-red-600">{rejectedCount}</div>
+                            <div className="text-2xl font-bold text-red-600">{statusCounts.rejected}</div>
                             <div className="text-sm text-gray-500">Rejected</div>
                         </div>
                     </motion.div>
@@ -433,10 +503,10 @@ const Documents = () => {
                                         type="text"
                                         placeholder="Search documents..."
                                         value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        onChange={(e) => handleSearchChange(e.target.value)}
                                         className="w-full pl-10 pr-12 text-black py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                                     />
-                                    {isSearching && (
+                                    {(documentSearchLoading || documentStatusLoading) && (
                                         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                                             <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
                                         </div>
@@ -446,16 +516,16 @@ const Documents = () => {
                             
                             <div className="flex flex-wrap gap-2">
                                 {[
-                                    { key: 'all', label: 'All Documents', count: totalCount },
-                                    { key: 'pending', label: 'Pending', count: pendingCount },
-                                    { key: 'approved', label: 'Approved', count: approvedCount },
-                                    { key: 'rejected', label: 'Rejected', count: rejectedCount }
+                                    { key: 'all', label: 'All Documents', count: statusCounts.total },
+                                    { key: 'pending', label: 'Pending', count: statusCounts.submitted + statusCounts['awaiting review'] },
+                                    { key: 'approved', label: 'Approved', count: statusCounts.approved },
+                                    { key: 'rejected', label: 'Rejected', count: statusCounts.rejected }
                                 ].map((filterOption) => (
                                     <motion.button
                                         key={filterOption.key}
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
-                                        onClick={() => setFilter(filterOption.key)}
+                                        onClick={() => handleFilterChange(filterOption.key)}
                                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                                             filter === filterOption.key
                                                 ? 'bg-indigo-600 text-white shadow-lg'
@@ -482,7 +552,7 @@ const Documents = () => {
                     </motion.div>
 
                     {/* Documents List */}
-                    {documentsArray.length === 0 ? (
+                    {displayDocuments.length === 0 ? (
                         <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -493,21 +563,28 @@ const Documents = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                             </div>
-                            <h3 className="text-2xl font-semibold text-gray-900 mb-3">No Documents Yet</h3>
+                            <h3 className="text-2xl font-semibold text-gray-900 mb-3">
+                                {searchTerm ? 'No Documents Found' : 'No Documents Yet'}
+                            </h3>
                             <p className="text-gray-600 max-w-md mx-auto mb-6">
-                                Upload your relocation documents for consultant review and approval.
+                                {searchTerm 
+                                    ? 'Try adjusting your search terms or clear the search to see all documents.'
+                                    : 'Upload your relocation documents for consultant review and approval.'
+                                }
                             </p>
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => setShowUploadModal(true)}
-                                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl inline-flex items-center space-x-2"
-                            >
-                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                </svg>
-                                <span>Upload Your First Document</span>
-                            </motion.button>
+                            {!searchTerm && (
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setShowUploadModal(true)}
+                                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl inline-flex items-center space-x-2"
+                                >
+                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                    </svg>
+                                    <span>Upload Your First Document</span>
+                                </motion.button>
+                            )}
                         </motion.div>
                     ) : (
                         <motion.div 
@@ -516,12 +593,12 @@ const Documents = () => {
                             animate="visible"
                             className="space-y-4"
                         >
-                            {/* Show loading skeleton when searching */}
-                            {isSearching ? (
+                            {/* Show loading skeleton when searching/filtering */}
+                            {(documentSearchLoading || documentStatusLoading) ? (
                                 <SearchLoadingSkeleton />
                             ) : (
                                 <AnimatePresence>
-                                    {filteredDocuments.map((document) => (
+                                    {displayDocuments.map((document) => (
                                         <motion.div
                                             key={document.id}
                                             variants={itemVariants}
@@ -593,29 +670,11 @@ const Documents = () => {
                                     ))}
                                 </AnimatePresence>
                             )}
-
-                            {/* No Results Message */}
-                            {!isSearching && filteredDocuments.length === 0 && documentsArray.length > 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="text-center py-12"
-                                >
-                                    <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                        </svg>
-                                    </div>
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No documents found</h3>
-                                    <p className="text-gray-600">Try adjusting your search or filter criteria</p>
-                                </motion.div>
-                            )}
                         </motion.div>
                     )}
                 </div>
             </div>
 
-            {/* Upload Document Modal */}
             <AnimatePresence>
                 {showUploadModal && (
                     <motion.div

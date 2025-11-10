@@ -429,3 +429,64 @@ export const fetchProgress = (profileId) => async (dispatch, getState) => {
         });
     }
 };
+
+export const documentSearch = (query) => async (dispatch, getState) => {
+    try {
+        dispatch({ type: "DOCUMENT_SEARCH_REQUEST" });
+
+        const authHeaders = getAuthHeaders(getState);
+
+        const { data } = await axios.get(
+            `${API_URL}/api/v1/profile/search_documents/?q=${encodeURIComponent(query)}`,
+            authHeaders
+        );
+
+        console.log("Document search results:", data);
+
+        dispatch({
+            type: "DOCUMENT_SEARCH_SUCCESS",
+            payload: data,
+        });
+    } catch (error) {
+        console.error("Error searching documents:", error);
+
+        dispatch({
+            type: "DOCUMENT_SEARCH_FAIL",
+            payload:
+                error.response && error.response.data.detail
+                    ? error.response.data.detail
+                    : error.message,
+        });
+    }
+}
+
+export const documentStatus = (statusFilter = "") => async (dispatch, getState) => {
+    try {
+        dispatch({ type: "DOCUMENT_STATUS_REQUEST" });
+
+        const authHeaders = getAuthHeaders(getState);
+
+        const url = statusFilter
+            ? `${API_URL}/api/v1/profile/document_status_overview/?status=${encodeURIComponent(statusFilter)}`
+            : `${API_URL}/api/v1/profile/document_status_overview/`;
+
+        const { data } = await axios.get(url, authHeaders);
+
+        console.log("Document status overview:", data);
+
+        dispatch({
+            type: "DOCUMENT_STATUS_SUCCESS",
+            payload: data,
+        });
+    } catch (error) {
+        console.error("Error fetching document status overview:", error);
+
+        dispatch({
+            type: "DOCUMENT_STATUS_FAIL",
+            payload:
+                error.response && error.response.data.detail
+                    ? error.response.data.detail
+                    : error.message,
+        });
+    }
+};

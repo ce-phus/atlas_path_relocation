@@ -10,7 +10,9 @@ import {
 
 import {
     profileReducer,
-    getProfileReducer
+    getProfileReducer,
+    documentSearchReducer,
+    documentStatusReducer
 } from "./profileReducers"
 
 import {
@@ -26,6 +28,8 @@ const allReducers = combineReducers({
 
     profileReducer,
     getProfileReducer,
+    documentSearchReducer,
+    documentStatusReducer,
 
     progressReducer,
 });
