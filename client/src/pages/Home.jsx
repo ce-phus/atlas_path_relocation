@@ -1,17 +1,21 @@
 import React, { useEffect } from 'react'
 import { Layout, Skeleton, Overview } from '../components'
 import { useDispatch, useSelector } from 'react-redux'
-import { loadProfile, loadTasks, loadAvailableConsultants, loadOverdueTasks } from '../actions/profileActions'
+import { loadProfile, loadTasks, loadAvailableConsultants, loadOverdueTasks, loadDocuments } from '../actions/profileActions'
 
 const Home = () => {
   const dispatch = useDispatch();
   const { profile, error, loading, } = useSelector((state) => state.getProfileReducer);
-  const {  tasks } = useSelector((state) => state.profileReducer);
+  const {  tasks, documents } = useSelector((state) => state.profileReducer);
 
   useEffect(()=> {
     if (!profile) {
       dispatch(loadProfile());
     };
+
+    if (!documents) {
+      dispatch(loadDocuments())
+    }
 
     if (!tasks) {
       dispatch(loadTasks());
@@ -19,7 +23,7 @@ const Home = () => {
     if (profile?.relocation_consultant) {
       dispatch(loadAvailableConsultants());
     };
-  }, [dispatch, profile, tasks, profile?.relocation_consultant]);
+  }, [dispatch, profile, tasks, profile?.relocation_consultant, documents]);
 
   if (loading) {
     return (

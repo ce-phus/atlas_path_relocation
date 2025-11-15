@@ -105,9 +105,9 @@ const SideNav = React.forwardRef(({ isSidebarOpen }, ref) => {
       className={`
         fixed left-0 top-0 h-full bg-white border-r border-gray-200 
         transition-all duration-300 ease-in-out z-40 overflow-y-auto custom-scrollbar
-        ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full md:w-20 md:translate-x-0'}
+        ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full md:w-64 md:translate-x-0'}
       `}
-      style={{ paddingTop: '64px' }} // Account for header height
+      style={{ paddingTop: '64px' }}
     >
       {/* Main Navigation */}
       <div className="py-4">

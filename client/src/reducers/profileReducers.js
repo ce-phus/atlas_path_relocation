@@ -132,7 +132,7 @@ export const documentStatusReducer = (state = { overview: {}, loading: false }, 
         default:
             return state;
     }
-};
+}
 
 export const taskSearchReducer = (state = { tasks: [] }, action) => {
     switch (action.type) {

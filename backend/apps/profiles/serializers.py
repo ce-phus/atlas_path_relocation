@@ -62,7 +62,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             'id', 'profile', 'document_type', 'document_name', 'document_file',
             'status', 'reviewed_by', 'reviewed_by_name', 'client_name', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at', "profile"]
 
 class TaskSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source='profile.user.get_full_name', read_only=True)

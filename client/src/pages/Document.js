@@ -1,107 +1,54 @@
-import { useRef, useCallback, useEffect, useState } from "react";
-import { Layout } from "../components"
-import { AnimatePresence, motion } from 'framer-motion'
+import React, { useEffect, useState, useCallback } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { Layout } from '../components'
+import { uploadDocument, documentSearch, documentStatus } from '../actions/profileActions'
+import { motion, AnimatePresence } from 'framer-motion'
 import Skeleton from "react-loading-skeleton"
-import { uploadDocument, documentSearch, documentStatus, loadDocuments } from '../actions/profileActions'
-import { useSelector, useDispatch } from 'react-redux'
-
-const API_URL = import.meta.env.VITE_API_URL 
-
- const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.1
-        }
-    }
-};
-
-const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-        y: 0,
-        opacity: 1,
-        transition: {
-            type: "spring",
-            stiffness: 100,
-            damping: 12
-        }
-    }
-};
-
-const modalVariants = {
-    hidden: { 
-        opacity: 0,
-        scale: 0.8
-    },
-    visible: { 
-        opacity: 1,
-        scale: 1,
-        transition: {
-            type: "spring",
-            damping: 25,
-            stiffness: 300
-        }
-    },
-    exit: {
-        opacity: 0,
-        scale: 0.8,
-        transition: {
-            duration: 0.2
-        }
-    }
-};
-
 
 const Documents = () => {
     const dispatch = useDispatch();
-    const [filter, setFilter] = useState('all');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [searchTimeout, setSearchTimeout] = useState(null);
+
+    const { 
+        documents: mainDocuments, 
+        documentloading: mainDocumentsLoading, 
+        documenterror: mainDocumentsError 
+    } = useSelector(state => state.profileReducer);
+    
+    const { 
+        documents: searchResults, 
+        loading: searchLoading, 
+        error: searchError 
+    } = useSelector(state => state.documentSearchReducer);
+    
+    const { 
+        overview: statusData, 
+        loading: statusLoading, 
+        error: statusError 
+    } = useSelector(state => state.documentStatusReducer);
+
+    const { profile } = useSelector((state) => state.getProfileReducer);
+    
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [dragActive, setDragActive] = useState(false);
+    const [filter, setFilter] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTimeout, setSearchTimeout] = useState(null);
 
-    const searchDebounceRef = useRef(null);
+    // Form state for document upload
+    const [uploadForm, setUploadForm] = useState({
+        document_type: '',
+        document_file: null,
+        description: ''
+    });
 
-    const { documents:mainDocuments, documentloading: mainDocumentsLoading, 
-        documenterror: mainDocumentsError } = useSelector((state)=> state.profileReducer)
-
-        const { 
-            documents: searchResults, 
-            loading: searchLoading, 
-            error: searchError 
-        } = useSelector(state => state.documentSearchReducer);
-
-        const { 
-            overview: statusData, 
-            loading: statusLoading, 
-            error: statusError 
-        } = useSelector(state => state.documentStatusReducer);
-
-        console.log("Status Data:", statusData);
-
-        // Form state for document upload
-        const [uploadForm, setUploadForm] = useState({
-            document_type: '',
-            document_file: null,
-            description: ''
-        });
-
-        // Common document types for dropdown
-        const documentTypes = [
-            'Passport', 'Visa Application', 'Birth Certificate', 'Marriage Certificate',
-            'Academic Certificates', 'Proof of Income', 'Bank Statements', 'Employment Contract',
-            'Rental Agreement', 'Utility Bill', 'Medical Records', 'Insurance Documents',
-            'Tax Returns', 'Driver License', 'Other'
-        ];
-
-    useEffect(()=> {
-        if (!mainDocuments || mainDocuments.length === 0) {
-            dispatch(loadDocuments())
-        }
-    }, [dispatch, mainDocuments])
+    // Common document types for dropdown
+    const documentTypes = [
+        'Passport', 'Visa Application', 'Birth Certificate', 'Marriage Certificate',
+        'Academic Certificates', 'Proof of Income', 'Bank Statements', 'Employment Contract',
+        'Rental Agreement', 'Utility Bill', 'Medical Records', 'Insurance Documents',
+        'Tax Returns', 'Driver License', 'Other'
+    ];
 
     // Debounced search function
     const debouncedSearch = useCallback((query) => {
@@ -136,20 +83,28 @@ const Documents = () => {
             dispatch(documentStatus(newFilter === 'all' ? null : newFilter));
         }
     };
+    useEffect(()=> {
+        if (!mainDocuments) {
+            dispatch(loadDocuments())
+        }
+    }, [mainDocuments])
+    
 
+    // Load initial documents
     useEffect(() => {
         dispatch(documentStatus());
     }, [dispatch]);
-   // Cleanup timeout on unmount
-   useEffect(() => {
-    return () => {
-        if (searchTimeout) {
-            clearTimeout(searchTimeout);
-        }
-    };
-}, [searchTimeout]);
 
-    // Determining which documents to display
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+        };
+    }, [searchTimeout]);
+
+    // Determine which documents to display
     const getDisplayDocuments = () => {
         if (searchTerm.trim() !== '') {
             return searchResults || [];
@@ -163,37 +118,88 @@ const Documents = () => {
         return Array.isArray(mainDocuments) ? mainDocuments : [];
     };
 
+    // Get status counts from status overview data
     const getStatusCounts = () => {
-        if (!statusData?.status_overview) {
-            return { approved: 0, pending: 0, rejected: 0, submitted: 0, total: 0 };
+        if (statusData?.status_overview) {
+            const statusCounts = {
+                approved: 0,
+                submitted: 0,
+                'awaiting review': 0,
+                rejected: 0,
+                total: statusData.total_documents || 0
+            };
+
+            statusData.status_overview.forEach(item => {
+                statusCounts[item.status] = item.count;
+            });
+
+            return statusCounts;
         }
-    
-        const counts = {
-            approved: 0,
-            pending: 0,
-            rejected: 0,
-            submitted: 0,
-            total: statusData.total_documents || 0
+
+        // Fallback to client-side calculation from displayed documents
+        const displayDocs = getDisplayDocuments();
+        return {
+            approved: displayDocs.filter(doc => doc.status === 'approved').length,
+            submitted: displayDocs.filter(doc => doc.status === 'submitted').length,
+            'awaiting review': displayDocs.filter(doc => doc.status === 'awaiting review').length,
+            rejected: displayDocs.filter(doc => doc.status === 'rejected').length,
+            total: displayDocs.length
         };
-    
-        statusData.status_overview.forEach(item => {
-            if (item.status === "approved") counts.approved += item.count;
-            if (item.status === "awaiting review") counts.pending += item.count;
-            if (item.status === "rejected") counts.rejected += item.count;
-            if (item.status === "submitted") counts.submitted += item.count;
-        });
-    
-        return counts;
     };
-    
+
     const statusCounts = getStatusCounts();
     const displayDocuments = getDisplayDocuments();
-    console.log("Display Documents:", displayDocuments);
-
-
-
     const isLoading = statusLoading || searchLoading || mainDocumentsLoading;
     const error = statusError || searchError || mainDocumentsError;
+
+    // Animation variants (keep your existing variants)
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: {
+            y: 0,
+            opacity: 1,
+            transition: {
+                type: "spring",
+                stiffness: 100,
+                damping: 12
+            }
+        }
+    };
+
+    const modalVariants = {
+        hidden: { 
+            opacity: 0,
+            scale: 0.8
+        },
+        visible: { 
+            opacity: 1,
+            scale: 1,
+            transition: {
+                type: "spring",
+                damping: 25,
+                stiffness: 300
+            }
+        },
+        exit: {
+            opacity: 0,
+            scale: 0.8,
+            transition: {
+                duration: 0.2
+            }
+        }
+    };
+
+
 
     const handleFileUpload = async (event) => {
         event.preventDefault();
@@ -292,6 +298,7 @@ const Documents = () => {
             default: return 'bg-blue-100 text-blue-800 border-blue-200';
         }
     };
+
     const getStatusIcon = (status) => {
         switch (status) {
             case 'approved': 
@@ -350,13 +357,13 @@ const Documents = () => {
             {[1, 2, 3].map(i => (
                 <div key={i} className="bg-white/80 rounded-xl p-6 border border-gray-200/60">
                     <div className="flex items-center space-x-4">
-                        <Skeleton circle width={48} baseColor="#595959" height={48} />
+                        <Skeleton circle width={48} height={48} />
                         <div className="flex-1 space-y-2">
-                            <Skeleton width="60%" baseColor="#595959"  height={20} />
-                            <Skeleton width="40%" baseColor="#595959"  height={16} />
+                            <Skeleton width="60%" height={20} />
+                            <Skeleton width="40%" height={16} />
                             <div className="flex space-x-2">
-                                <Skeleton width={80} baseColor="#595959"  height={24} />
-                                <Skeleton width={100} baseColor="#595959"  height={24} />
+                                <Skeleton width={80} height={24} />
+                                <Skeleton width={100} height={24} />
                             </div>
                         </div>
                     </div>
@@ -373,16 +380,16 @@ const Documents = () => {
                         <div className="animate-pulse space-y-8">
                             {/* Header Skeleton */}
                             <div className="text-center space-y-4">
-                                <Skeleton height={40} baseColor='#6D6A6A' width={200} className="mx-auto" />
-                                <Skeleton height={20} width={300} baseColor='#6D6A6A' className="mx-auto" />
+                                <Skeleton height={40} width={200} className="mx-auto" />
+                                <Skeleton height={20} width={300} className="mx-auto" />
                             </div>
                             
                             {/* Stats Skeleton */}
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                 {[1, 2, 3, 4].map(i => (
                                     <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                                        <Skeleton height={24} baseColor='#6D6A6A' width="75%" className="mb-2" />
-                                        <Skeleton height={32} baseColor='#6D6A6A' width="50%" />
+                                        <Skeleton height={24} width="75%" className="mb-2" />
+                                        <Skeleton height={32} width="50%" />
                                     </div>
                                 ))}
                             </div>
@@ -392,10 +399,10 @@ const Documents = () => {
                                 {[1, 2, 3, 4, 5].map(i => (
                                     <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100">
                                         <div className="flex items-center space-x-4">
-                                            <Skeleton baseColor='#6D6A6A' circle width={48} height={48} />
+                                            <Skeleton circle width={48} height={48} />
                                             <div className="flex-1 space-y-2">
-                                                <Skeleton baseColor='#6D6A6A' height={16} width="75%" />
-                                                <Skeleton baseColor='#6D6A6A' height={12} width="50%" />
+                                                <Skeleton height={16} width="75%" />
+                                                <Skeleton height={12} width="50%" />
                                             </div>
                                         </div>
                                     </div>
@@ -440,100 +447,116 @@ const Documents = () => {
         );
     }
 
-  return (
-    <Layout>
-        <div className='min-h-screen ng-white py-8'>
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-                <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className='text-center mb-12'
-                >
-                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-center mb-6 bg-gradient-to-r from-gray-800 to-indigo-600 bg-clip-text text-transparent inline-block [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]">
+    return (
+        <Layout>
+            <div className="min-h-screen bg-white py-8">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    {/* Header Section */}
+                    <motion.div 
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-center mb-12"
+                    >
+                        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-center mb-6 bg-gradient-to-r from-gray-800 to-indigo-600 bg-clip-text text-transparent inline-block [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]">
                             Relocation Documents
-                    </h1>
-                    <p className="text-lg font-light text-black max-w-2xl mx-auto">
-                        Manage all your relocation documents in one secure place. Upload, track, and organize your important files.
-                    </p>
-                </motion.div>
+                        </h1>
+                        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                            Manage all your relocation documents in one secure place. Upload, track, and organize your important files.
+                        </p>
+                    </motion.div>
 
-                <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
-                >
-                    <div className='bg-white/80 backdrop-blur-sm rounded-2xl p-6 border borer-gray-200 shadow-sm'>
-                        <div className='text-2xl font-bold text-indigo-600'>{statusCounts.total}</div>
-                        <div className="text-sm text-black">Total Documents</div>
-                    </div>
-                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 shadow-sm">
-                        <div className="text-2xl font-bold text-green-600">{statusCounts.approved}</div>
-                        <div className="text-sm text-gray-500">Approved</div>
-                    </div>
-                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 shadow-sm">
-                        <div className="text-2xl font-bold text-amber-600">{statusCounts.submitted + statusCounts.pending}</div>
-                        <div className="text-sm text-gray-500">Pending Review</div>
-                    </div>
-                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 shadow-sm">
-                        <div className="text-2xl font-bold text-red-600">{statusCounts.rejected}</div>
-                        <div className="text-sm text-gray-500">Rejected</div>
-                    </div>
-                </motion.div>
-
-                <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 shadow-sm mb-8"
-                >
-                    <div
-                    className='flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 mb-6'>
-                        <div
-                        className='relative'
-                        >
-                            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                            <input
-                            type='text'
-                            placeholder='Search Documents...'
-                            onChange={(e) => handleSearchChange(e.target.value)}
-                            className="w-full pl-10 pr-12 text-black py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
-                            />
-                            {(searchLoading || statusLoading) && (
-                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                    <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                                </div>
-                            )}
+                    {/* Stats Overview */}
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+                    >
+                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 shadow-sm">
+                            <div className="text-2xl font-bold text-indigo-600">{statusCounts.total}</div>
+                            <div className="text-sm text-gray-500">Total Documents</div>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                        {[
-                            {key: "all", label: "All Documents", count:statusCounts.total},
-                            {key: "approved", label: "Approved", count:statusCounts.approved},
-                            {key: "awaiting review", label: "Pending Review", count:statusCounts.pending + statusCounts.submitted},
-                            {key: "rejected", label: "Rejected", count:statusCounts.rejected},
-                        ].map((filterOption) => (
+                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 shadow-sm">
+                            <div className="text-2xl font-bold text-green-600">{statusCounts.approved}</div>
+                            <div className="text-sm text-gray-500">Approved</div>
+                        </div>
+                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 shadow-sm">
+                            <div className="text-2xl font-bold text-amber-600">{statusCounts.submitted + statusCounts['awaiting review']}</div>
+                            <div className="text-sm text-gray-500">Pending Review</div>
+                        </div>
+                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 shadow-sm">
+                            <div className="text-2xl font-bold text-red-600">{statusCounts.rejected}</div>
+                            <div className="text-sm text-gray-500">Rejected</div>
+                        </div>
+                    </motion.div>
+
+                    {/* Search and Filter Bar */}
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 shadow-sm mb-8"
+                    >
+                        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                            <div className="flex-1 w-full md:max-w-md">
+                                <div className="relative">
+                                    <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                    <input
+                                        type="text"
+                                        placeholder="Search documents..."
+                                        value={searchTerm}
+                                        onChange={(e) => handleSearchChange(e.target.value)}
+                                        className="w-full pl-10 pr-12 text-black py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                                    />
+                                    {(searchLoading || statusLoading) && (
+                                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                            <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    { key: 'all', label: 'All Documents', count: statusCounts.total },
+                                    { key: 'pending', label: 'Pending', count: statusCounts.submitted + statusCounts['awaiting review'] },
+                                    { key: 'approved', label: 'Approved', count: statusCounts.approved },
+                                    { key: 'rejected', label: 'Rejected', count: statusCounts.rejected }
+                                ].map((filterOption) => (
+                                    <motion.button
+                                        key={filterOption.key}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => handleFilterChange(filterOption.key)}
+                                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+                                            filter === filterOption.key
+                                                ? 'bg-indigo-600 text-white shadow-lg'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {filterOption.label} ({filterOption.count})
+                                    </motion.button>
+                                ))}
+                            </div>
+
                             <motion.button
-                                key={filterOption.key}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => handleFilterChange(filterOption.key)}
-                                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
-                                    filter === filterOption.key
-                                        ? 'bg-indigo-600 text-white shadow-lg'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
+                                onClick={() => setShowUploadModal(true)}
+                                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 cursor-pointer transition-all duration-300 shadow-lg hover:shadow-xl flex items-center space-x-2"
                             >
-                                {filterOption.label} ({filterOption.count})
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                                <span>Upload Document</span>
                             </motion.button>
-                        ))}
                         </div>
-                    </div>
+                    </motion.div>
 
-                    
-                </motion.div>
-                {displayDocuments.length === 0 ? (
+                    {/* Documents List */}
+                    {displayDocuments.length === 0 ? (
                         <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -579,21 +602,8 @@ const Documents = () => {
                                 <SearchLoadingSkeleton />
                             ) : (
                                 <AnimatePresence>
-                                    {displayDocuments.map((document) => {
-                                        let documentPath;
-
-                                        if (document.document_file) {
-                                           if (document.document_file.startsWith("http") || document.document_file.startsWith("https")) {
-                                                const documentPathUrl = new URL(document.document_file);
-                                                documentPath = documentPathUrl.pathname;
-                                           } else {
-                                                documentPath = document.document_file.startsWith("/") ? document.document_file : `/${document.document_file}`;
-                                           }
-                                        } 
-
-                                        const fullDocumentURL = documentPath ? `${API_URL}${documentPath}` : '#';
-                                        return (
-                                            <motion.div
+                                    {displayDocuments.map((document) => (
+                                        <motion.div
                                             key={document.id}
                                             variants={itemVariants}
                                             layout
@@ -617,7 +627,7 @@ const Documents = () => {
                                                         
                                                         <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm text-gray-600 gap-2">
                                                             <span className="flex items-center space-x-1">
-                                                                <span className="text-lg">{getFileIcon(fullDocumentURL)}</span>
+                                                                <span className="text-lg">{getFileIcon(document.document_file)}</span>
                                                                 <span>{document.document_name || 'Document'}</span>
                                                             </span>
                                                             <span className="hidden sm:inline">•</span>
@@ -636,7 +646,7 @@ const Documents = () => {
                                                     <motion.a
                                                         whileHover={{ scale: 1.1 }}
                                                         whileTap={{ scale: 0.9 }}
-                                                        href={fullDocumentURL}
+                                                        href={document.document_file}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="w-10 h-10 bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center justify-center transition-colors duration-200 flex-shrink-0"
@@ -650,7 +660,7 @@ const Documents = () => {
                                                     <motion.a
                                                         whileHover={{ scale: 1.1 }}
                                                         whileTap={{ scale: 0.9 }}
-                                                        href={fullDocumentURL}
+                                                        href={document.document_file}
                                                         download
                                                         className="w-10 h-10 bg-green-50 hover:bg-green-100 rounded-lg flex items-center justify-center transition-colors duration-200 flex-shrink-0"
                                                         title="Download Document"
@@ -662,8 +672,7 @@ const Documents = () => {
                                                 </div>
                                             </div>
                                         </motion.div>
-                                        )
-                                        })}
+                                    ))}
                                 </AnimatePresence>
                             )}
                         </motion.div>
@@ -830,7 +839,7 @@ const Documents = () => {
                 )}
             </AnimatePresence>
         </Layout>
-  )
+    )
 }
 
 export default Documents

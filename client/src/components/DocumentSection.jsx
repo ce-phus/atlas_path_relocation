@@ -10,6 +10,12 @@ const DocumentSection = ({ profile, expanded = false }) => {
     const [uploading, setUploading] = useState(false);
     const [hasLoaded, setHasLoaded] = useState(false);
     const [dragActive, setDragActive] = useState(false);
+
+    useEffect(()=> {
+        if (!documents) {
+            dispatch(loadDocuments())
+        }
+    }, [documents])
     
     // Form state for document upload
     const [uploadForm, setUploadForm] = useState({

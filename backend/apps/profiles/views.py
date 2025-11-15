@@ -150,6 +150,7 @@ class DocumentViewset(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ["document_type", "status", "profile"]
     search_fields = ["document_type", "profile__user__first_name", "profile__user__last_name"]
+    lookup_field = 'id'
 
     def get_queryset(self):
         user = self.request.user
@@ -176,6 +177,34 @@ class DocumentViewset(viewsets.ModelViewSet):
             document.reviewed_by = consultant
             document.save()
             return Response({"status": "Document status updated."}, status=status.HTTP_200_OK)
+        
+        return Response({"error": "Invalid status."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=["post"], url_path="upload")
+    def upload(self, request):
+        profile = getattr(request.user, 'profile', None)
+
+        if not profile:
+            return Response({"error": "Only clients can upload documents."}, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = DocumentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(profile=profile)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=["post"])
+    def update_status_bulk(self, request, pk=None):
+        document = self.get_object()
+        new_status = request.data.get("status")
+        consultant = getattr(request.user, 'consultant_profile', None)
+
+        if not consultant:
+            return Response({"error": "Only consultants can update document status."}, status=status.HTTP_403_FORBIDDEN)
+        if new_status in dict(Document.STATUS_CHOICES):
+            related_documents = Document.objects.filter(profile=document.profile, document_type=document.document_type)
+            updated_count = related_documents.update(status=new_status, reviewed_by=consultant)
+            return Response({"status": f"{updated_count} documents updated."}, status=status.HTTP_200_OK)
         
         return Response({"error": "Invalid status."}, status=status.HTTP_400_BAD_REQUEST)
     
