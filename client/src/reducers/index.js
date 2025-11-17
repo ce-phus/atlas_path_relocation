@@ -21,6 +21,10 @@ import {
     progressReducer
 } from "./progressReducer"
 
+import {
+    budgetReducer
+} from "./budgetReducer"
+
 const allReducers = combineReducers({
     userLoginReducer,
     userRegisterReducer,
@@ -36,6 +40,7 @@ const allReducers = combineReducers({
     taskDueOverviewReducer,
 
     progressReducer,
+    budgetReducer,
 });
 
 export default allReducers;
