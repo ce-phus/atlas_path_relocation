@@ -1,3 +1,157 @@
-from django.shortcuts import render
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django.db.models import Sum, Q
+from .models import RelocationCase, Expense, BudgetAllocation, BudgetCategory
+from .serializers import *
 
-# Create your views here.
+class RelocationCaseViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RelocationCaseSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # CLient see their own cases, consultants see assigned cases
+        if hasattr(user, "managed_cases"):
+            return RelocationCase.objects.filter(
+                Q(client=user) | Q(consultant=user)
+            ).distinct()
+        
+        return RelocationCase.objects.filter(client=user)
+    
+    def perform_create(self, serializer):
+        serializer.save(client=self.request.user)
+
+class ExpenseViewSet(viewsets.ModelViewSet):
+    permission_classes=[IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return ExpenseCreateSerializer
+        return ExpenseSerializer
+    
+    def get_queryset(self):
+        user=self.request.user
+        case_id = self.request.query_params.get("case_id")
+
+        queryset = Expense.objects.select_related("case", "category")
+
+        if case_id:
+            queryset = queryset.filter(case_id=case_id)
+
+        # client see their expenses, consuktants see expenses for their cases
+        if hasattr(user, "managed_cases"):
+            return queryset.filter(
+                Q(case__client=user) | Q(case__consultant=user)
+            ).distinct()
+        return queryset.filter(case__client=user)
+    
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    @action(detail=True, methods=["post"])
+    def submit_for_approval(self, request, pk=None):
+        expense = self.get_object()
+        if expense.created_by !=request.user:
+            return Response({"error": "Not authorised"}, status=status.HTTP_403_FORBIDDEN)
+        expense.status = "submitted"
+
+        expense.save()
+        return Response({
+            "status": "submitted for approval"
+        })
+    
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        expense = self.get_object()
+        if expense.case.consultant != request.user:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        expense.status = 'approved'
+        expense.save()
+        
+        # Update budget allocation actual spent
+        allocation = BudgetAllocation.objects.get(
+            case=expense.case, 
+            category=expense.category
+        )
+        allocation.actual_spent += expense.amount
+        allocation.save()
+        
+        return Response({'status': 'approved'})
+    
+class BudgetAllocationViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = BudgetAllocationSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        case_id = self.request.query_params.get('case_id')
+        
+        queryset = BudgetAllocation.objects.select_related('case', 'category')
+        
+        if case_id:
+            queryset = queryset.filter(case_id=case_id)
+        
+        if hasattr(user, 'managed_cases'):
+            return queryset.filter(
+                Q(case__client=user) | Q(case__consultant=user)
+            ).distinct()
+        return queryset.filter(case__client=user)
+    
+class DashboardViewset(viewsets.ViewSet):
+    permission_classes=[IsAuthenticated]
+
+    @action(detail=False, method=['get'])
+    def budgetSummary(self, request):
+        case_id= request.query_params.get("case_id")
+        user=self.request.user
+
+        if not case_id:
+            return Response({"error" : "Case Id Required"},status=400)
+        
+        case = RelocationCase.objects.filter(
+            Q(client=user) | Q(consultant=user),
+            id=case_id
+        ).first()
+        
+        if not case:
+            return Response({'error': 'Case not found'}, status=404)
+        
+        # Calculate Totals
+        total_allocated = BudgetAllocation.objects.filter(
+            case=case,
+        ).aggregate(total=Sum("allocated_amount"))['total'] or 0
+
+        total_spent = Expense.objects.filter(
+            case=case,
+            status__in= ["approved", "paid"]
+        ).aggregate(total=Sum("allocated_amount"))['total'] or 0
+
+
+        # category_breakdown
+        categories = BudgetAllocation.objects.filter(case=case).annotate(
+            remaining=Sum("allocated_amount") - Sum("actual_spent")
+        )
+
+        category_data = []
+
+        for cat in categories:
+            category_data.append({
+                "category": cat.category.name,
+                "allocated": float(cat.allocated_amount),
+                "spent": float(cat.actual_spent),
+                "remaining": float(cat.allocated_amount - cat.actual_spent)
+            })
+
+
+        return Response({
+            'total_budget': float(case.total_budget),
+            'total_allocated': float(total_allocated),
+            'total_spent': float(total_spent),
+            'remaining_budget': float(case.total_budget - total_spent),
+            'categories': category_data
+        })
+        
