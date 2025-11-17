@@ -45,6 +45,7 @@ LOCAL_APPS = [
     'apps.users',
     "apps.profiles",
     "apps.dashboard",
+    "apps.budget",
 ]
 
 DJANGO_APPS = [
