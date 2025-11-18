@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { Layout, Skeleton, Overview } from '../components'
 import { useDispatch, useSelector } from 'react-redux'
 import { loadProfile, loadTasks, loadAvailableConsultants, loadOverdueTasks, loadDocuments } from '../actions/profileActions'
+import { logout } from '../actions/userActions'
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -25,10 +26,33 @@ const Home = () => {
     };
   }, [dispatch, profile, tasks, profile?.relocation_consultant, documents]);
 
+  useEffect(() => {
+    if (error === "User not found") {
+      dispatch(logout());
+    }
+  }, [error, dispatch]);
+
   if (loading) {
     return (
       <Layout>
-        <Skeleton />
+        <div className='flex items-center justify-center pt-20'>
+          <svg 
+            className="animate-spin h-20 w-20 mx-auto" 
+            viewBox="0 0 24 24"
+          >
+            <circle 
+              cx="12" 
+              cy="12" 
+              r="10" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              fill="none" 
+              strokeLinecap="round"
+              strokeDasharray="40 100"
+              className="text-indigo-600 opacity-60"
+            />
+          </svg>
+        </div>
       </Layout>
     )
   }

@@ -66,7 +66,7 @@ export const profileReducer = (state = initialState, action) => {
         case "TASK_COMPLETE_REQUEST":
             return { ...state, taskloading: true, taskerror: null };
         case "TASKS_LOAD_SUCCESS":
-            return { ...state, taskoading: false, tasks: action.payload, taskerror: null };
+            return { ...state, taskloading: false, tasks: action.payload, taskerror: null };
 
         case "TASK_CREATE_SUCCESS":
         case "TASK_COMPLETE_SUCCESS":

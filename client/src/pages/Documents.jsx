@@ -97,13 +97,10 @@ const Documents = () => {
             'Tax Returns', 'Driver License', 'Other'
         ];
 
-    useEffect(()=> {
-        if (!mainDocuments || mainDocuments.length === 0) {
-            dispatch(loadDocuments())
-        }
-    }, [dispatch, mainDocuments])
-
-    // Debounced search function
+        useEffect(() => {
+            dispatch(loadDocuments());
+        }, [dispatch]); 
+        
     const debouncedSearch = useCallback((query) => {
         if (searchTimeout) {
             clearTimeout(searchTimeout);

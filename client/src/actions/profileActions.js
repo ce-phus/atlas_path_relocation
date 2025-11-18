@@ -152,7 +152,7 @@ export const loadAvailableConsultants = () => async(dispatch, getState) => {
         })
     } catch(error) {
         dispatch({
-            type: "AVAILABLE_CONSULTANTS_LOAD_SUCCESS",
+            type: "AVAILABLE_CONSULTANTS_LOAD_FAIL",
             payload: error.response && error.response.data.detail
                 ? error.response.data.detail
                 : error.message,
@@ -177,7 +177,7 @@ export const assignConsultant = (consultantId) => async(dispatch, getState) => {
             authHeaders
         )
         console.log("Consultant assigned:", data);
-        loadAvailableConsultants();
+        dispatch(loadAvailableConsultants());
         dispatch({
             type: "ASSIGN_CONSULTANT_SUCCESS",
             payload: data,

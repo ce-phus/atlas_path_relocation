@@ -102,56 +102,58 @@ class BudgetAllocationViewSet(viewsets.ModelViewSet):
         return queryset.filter(case__client=user)
     
 class DashboardViewset(viewsets.ViewSet):
-    permission_classes=[IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
-    @action(detail=False, method=['get'])
-    def budgetSummary(self, request):
-        case_id= request.query_params.get("case_id")
-        user=self.request.user
+    @action(detail=False, methods=['get'])
+    def budget_summary(self, request):
+        try:
+            case_id = request.query_params.get("case_id")
+            user = request.user
 
-        if not case_id:
-            return Response({"error" : "Case Id Required"},status=400)
-        
-        case = RelocationCase.objects.filter(
-            Q(client=user) | Q(consultant=user),
-            id=case_id
-        ).first()
-        
-        if not case:
-            return Response({'error': 'Case not found'}, status=404)
-        
-        # Calculate Totals
-        total_allocated = BudgetAllocation.objects.filter(
-            case=case,
-        ).aggregate(total=Sum("allocated_amount"))['total'] or 0
+            if not case_id:
+                return Response({"error": "Case ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            case = RelocationCase.objects.filter(
+                Q(client=user) | Q(consultant=user),
+                id=case_id
+            ).first()
+            
+            if not case:
+                return Response({'error': 'Case not found or access denied'}, 
+                              status=status.HTTP_404_NOT_FOUND)
+            
+            # Calculate totals
+            total_allocated = BudgetAllocation.objects.filter(
+                case=case,
+            ).aggregate(total=Sum("allocated_amount"))['total'] or 0
 
-        total_spent = Expense.objects.filter(
-            case=case,
-            status__in= ["approved", "paid"]
-        ).aggregate(total=Sum("allocated_amount"))['total'] or 0
+            total_spent = Expense.objects.filter(
+                case=case,
+                status__in=["approved", "paid"]
+            ).aggregate(total=Sum("amount"))['total'] or 0
 
+            categories = BudgetAllocation.objects.filter(case=case)
+            category_data = []
+            
+            for cat in categories:
+                category_data.append({
+                    "category": cat.category.name,
+                    "allocated": float(cat.allocated_amount),
+                    "spent": float(cat.actual_spent),
+                    "remaining": float(cat.allocated_amount - cat.actual_spent)
+                })
 
-        # category_breakdown
-        categories = BudgetAllocation.objects.filter(case=case).annotate(
-            remaining=Sum("allocated_amount") - Sum("actual_spent")
-        )
-
-        category_data = []
-
-        for cat in categories:
-            category_data.append({
-                "category": cat.category.name,
-                "allocated": float(cat.allocated_amount),
-                "spent": float(cat.actual_spent),
-                "remaining": float(cat.allocated_amount - cat.actual_spent)
+            return Response({
+                'total_budget': float(case.total_budget),
+                'total_allocated': float(total_allocated),
+                'total_spent': float(total_spent),
+                'remaining_budget': float(case.total_budget - total_spent),
+                'categories': category_data
             })
-
-
-        return Response({
-            'total_budget': float(case.total_budget),
-            'total_allocated': float(total_allocated),
-            'total_spent': float(total_spent),
-            'remaining_budget': float(case.total_budget - total_spent),
-            'categories': category_data
-        })
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Server error: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         
