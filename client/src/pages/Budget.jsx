@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Layout } from '../components'
+import { Layout, ExpenseForm } from '../components'
 import { motion } from 'framer-motion'
 import { fetchBudgetData, fetchExpenses, createExpense, submitExpenseForApproval, approveExpense } from '../actions/budgetActions';
 import { containerVariants, itemVariants } from '../components/BudgetSection';
@@ -232,6 +232,15 @@ if (loading && !budgetSummary) {
                     )}
                 </div>
             </div>
+
+            {showExpenseForm && (
+                <ExpenseForm 
+                    open={showExpenseForm}
+                    onClose={() => setShowExpenseForm(false)}
+                    onSubmit={handleCreateExpense}
+                    caseId={profile?.id}
+                />
+            )}
     </Layout>
   )
 }

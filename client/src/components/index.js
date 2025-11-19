@@ -11,6 +11,7 @@ import Overview from "./Overview";
 import OverdueTasks from "./OverdueTasks";
 import ProfileAbout from "./ProfileAbout";
 import BudgetSection from "./BudgetSection";
+import ExpenseForm from "./ExpenseForm";
 
 export {
     Layout,
@@ -25,5 +26,6 @@ export {
     EditLoader,
     OverdueTasks,
     ProfileAbout,
-    BudgetSection
+    BudgetSection,
+    ExpenseForm
 }
