@@ -716,7 +716,7 @@ const Documents = () => {
                                             required
                                             value={uploadForm.document_type}
                                             onChange={(e) => handleInputChange('document_type', e.target.value)}
-                                            className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 appearance-none bg-white pr-10 cursor-pointer"
+                                            className="w-full p-3 border border-gray-300 text-black rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 appearance-none bg-white pr-10 cursor-pointer"
                                         >
                                             <option value="">Select Document Type</option>
                                             {documentTypes.map(type => (
@@ -781,7 +781,7 @@ const Documents = () => {
                                         value={uploadForm.description}
                                         onChange={(e) => handleInputChange('description', e.target.value)}
                                         rows="3"
-                                        className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                                        className="w-full p-3 border border-gray-300 rounded-xl text-black focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                                         placeholder="Add any notes or description about this document..."
                                     />
                                 </div>

@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Q
 from .models import RelocationCase, Expense, BudgetAllocation, BudgetCategory
 from .serializers import *
+from apps.profiles.models import Profile
 
 class RelocationCaseViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -16,13 +17,13 @@ class RelocationCaseViewSet(viewsets.ModelViewSet):
         # CLient see their own cases, consultants see assigned cases
         if hasattr(user, "managed_cases"):
             return RelocationCase.objects.filter(
-                Q(client=user) | Q(consultant=user)
+                Q(user=user) | Q(consultant=user)
             ).distinct()
         
-        return RelocationCase.objects.filter(client=user)
+        return RelocationCase.objects.filter(user=user)
     
     def perform_create(self, serializer):
-        serializer.save(client=self.request.user)
+        serializer.save(user=self.request.user)
 
 class ExpenseViewSet(viewsets.ModelViewSet):
     permission_classes=[IsAuthenticated]
@@ -34,19 +35,17 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user=self.request.user
-        case_id = self.request.query_params.get("case_id")
 
         queryset = Expense.objects.select_related("case", "category")
 
-        if case_id:
-            queryset = queryset.filter(case_id=case_id)
+        queryset = queryset.filter(created_by=user)
 
-        # client see their expenses, consuktants see expenses for their cases
+        # client see their expenses, consultants see expenses for their cases
         if hasattr(user, "managed_cases"):
             return queryset.filter(
-                Q(case__client=user) | Q(case__consultant=user)
+                Q(case__user=user) | Q(case__consultant=user)
             ).distinct()
-        return queryset.filter(case__client=user)
+        return queryset.filter(case__user=user)
     
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -97,9 +96,9 @@ class BudgetAllocationViewSet(viewsets.ModelViewSet):
         
         if hasattr(user, 'managed_cases'):
             return queryset.filter(
-                Q(case__client=user) | Q(case__consultant=user)
+                Q(case__user=user) | Q(case__consultant=user)
             ).distinct()
-        return queryset.filter(case__client=user)
+        return queryset.filter(case__user=user)
     
 class DashboardViewset(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
@@ -107,22 +106,20 @@ class DashboardViewset(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def budget_summary(self, request):
         try:
-            case_id = request.query_params.get("case_id")
             user = request.user
 
-            if not case_id:
-                return Response({"error": "Case ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            case = RelocationCase.objects.filter(
-                Q(client=user) | Q(consultant=user),
-                id=case_id
-            ).first()
+            case = RelocationCase.objects.filter(user=user).first()
             
             if not case:
-                return Response({'error': 'Case not found or access denied'}, 
-                              status=status.HTTP_404_NOT_FOUND)
-            
-            # Calculate totals
+
+                return Response({
+                    'total_budget': 0,
+                    'total_allocated': 0,
+                    'total_spent': 0,
+                    'remaining_budget': 0,
+                    'categories': []
+                })
+
             total_allocated = BudgetAllocation.objects.filter(
                 case=case,
             ).aggregate(total=Sum("allocated_amount"))['total'] or 0
@@ -136,18 +133,23 @@ class DashboardViewset(viewsets.ViewSet):
             category_data = []
             
             for cat in categories:
+                allocated = cat.allocated_amount or 0
+                spent = cat.actual_spent or 0
+
                 category_data.append({
                     "category": cat.category.name,
-                    "allocated": float(cat.allocated_amount),
-                    "spent": float(cat.actual_spent),
-                    "remaining": float(cat.allocated_amount - cat.actual_spent)
+                    "allocated": float(allocated),
+                    "spent": float(spent),
+                    "remaining": float(allocated - spent)
                 })
 
+            total_budget = case.total_budget or 0
+
             return Response({
-                'total_budget': float(case.total_budget),
+                'total_budget': float(total_budget),
                 'total_allocated': float(total_allocated),
                 'total_spent': float(total_spent),
-                'remaining_budget': float(case.total_budget - total_spent),
+                'remaining_budget': float(total_budget - total_spent),
                 'categories': category_data
             })
             

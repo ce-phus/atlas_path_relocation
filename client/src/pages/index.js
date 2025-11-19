@@ -4,6 +4,7 @@ import Register from "./Register";
 import Profile from "./Profile";
 import Tasks from "./Tasks";
 import Documents from "./Documents";
+import Budget from "./Budget";
 
 export {
     Home,
@@ -11,5 +12,6 @@ export {
     Register,
     Profile,
     Tasks,
-    Documents
+    Documents,
+    Budget
 }

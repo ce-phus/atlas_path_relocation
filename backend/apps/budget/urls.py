@@ -4,7 +4,7 @@ from . import views
 
 router = DefaultRouter()
 router.register(r'cases',views.RelocationCaseViewSet, basename="cases")
-router.register(r'expense', views.ExpenseViewSet, basename="expense")
+router.register(r'expenses', views.ExpenseViewSet, basename="expenses")
 router.register(r'allocation', views.BudgetAllocationViewSet, basename="allocation")
 router.register(r'dashboard', views.DashboardViewset, basename="dashboard")
 

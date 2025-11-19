@@ -19,7 +19,7 @@ export const getAuthHeaders = (getState) => {
     }
 }
 
-export const fetchBudgetData = (caseId) => async (dispatch, getState) => {
+export const fetchBudgetData = () => async (dispatch, getState) => {
     try {
         dispatch({
             type: "BUDGET_SUMMARY_REQUEST"
@@ -27,7 +27,7 @@ export const fetchBudgetData = (caseId) => async (dispatch, getState) => {
 
         const headers = getAuthHeaders(getState);
         const { data } = await axios.get(
-            `${API_URL}/api/v1/budget/dashboard/budget_summary/?case_id=${caseId}`,
+            `${API_URL}/api/v1/budget/dashboard/budget_summary/`,
             headers
         );
 
@@ -39,14 +39,15 @@ export const fetchBudgetData = (caseId) => async (dispatch, getState) => {
     } catch(error) {
         dispatch({
             type: "BUDGET_SUMMARY_FAIL",
-            payload: error.response && error.response.data.detail
-                ? error.response.data.detail
-                : error.message,
+            payload: error.response && error.response.data.error
+                ? error.response.data.error
+                : error.response.data.error,
         })
+        console.log(error, "error")
     }
 }
 
-export const fetchExpenses = (caseId) => async (dispatch, getState) => {
+export const fetchExpenses = () => async (dispatch, getState) => {
     try {
         dispatch({
             type: "EXPENSES_LIST_REQUEST"
@@ -54,7 +55,7 @@ export const fetchExpenses = (caseId) => async (dispatch, getState) => {
 
         const headers = getAuthHeaders(getState);
         const { data } = await axios.get(
-            `${API_URL}/api/v1/budget/expenses/?case_id=${caseId}`,
+            `${API_URL}/api/v1/budget/expenses/`,
             headers
         );
 

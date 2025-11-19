@@ -10,6 +10,7 @@ import EditLoader from "./Skeletons/EditLoader";
 import Overview from "./Overview";
 import OverdueTasks from "./OverdueTasks";
 import ProfileAbout from "./ProfileAbout";
+import BudgetSection from "./BudgetSection";
 
 export {
     Layout,
@@ -23,5 +24,6 @@ export {
     Overview,
     EditLoader,
     OverdueTasks,
-    ProfileAbout
+    ProfileAbout,
+    BudgetSection
 }

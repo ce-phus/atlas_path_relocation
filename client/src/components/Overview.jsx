@@ -4,6 +4,7 @@ import TasksSection from './TasksSection'
 import ConsultationSection from './ConsultationSection'
 import DocumentSection from './DocumentSection'
 import OverdueTasks from './OverdueTasks'
+import BudgetSection from './BudgetSection'
 
 const Overview = ({ profile, tasks }) => {
     const tasksArray = Array.isArray(tasks) ? tasks : (tasks?.results || tasks?.data || []);
@@ -13,10 +14,12 @@ const Overview = ({ profile, tasks }) => {
             <OverdueTasks tasks={tasksArray} />
             <ProgressTracker profile={profile} />
             <TasksSection profile={profile} tasks={tasks} expanded={false}/>
+            
         </div>
         <div className='lg:col-span-1 space-y-6'>
             <ConsultationSection profile={profile} expanded={false} />
             <DocumentSection profile={profile} expanded={false} />
+            <BudgetSection profile={profile} expanded={false} />
         </div>
     </div>
   )

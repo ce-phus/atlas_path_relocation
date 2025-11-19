@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Login, Register, Home, Profile, Tasks, Documents } from "./pages"
+import { Login, Register, Home, Profile, Tasks, Documents, Budget } from "./pages"
 
 function App() {
 
@@ -12,6 +12,7 @@ function App() {
         <Route path="/profile" element={<Profile />} exact />
         <Route path="/tasks" element={<Tasks />} exact />
         <Route path="/documents" element={<Documents />} exact />
+        <Route path="/budget" element={<Budget />} exact />
       </Routes>
     </Router>
   )

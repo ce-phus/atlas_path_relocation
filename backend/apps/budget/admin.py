@@ -24,6 +24,7 @@ class RelocationAdmin(admin.ModelAdmin):
     list_display=("user", "consultant", "case_number", "relocation_type")
     list_filter=("user", "consultant", "case_number", "relocation_type")
     search_fields=("user", "consultant", "case_number", "relocation_type")
+    readonly_fields=("case_number",)
 
 
 
