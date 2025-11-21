@@ -1,12 +1,13 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ConsultantViewset, ProfileViewset, DocumentViewset, TaskViewset, GetProfileAPIView, DocumentSearchAPIView, DocumentStatusOverviewAPIView, TaskSearchAPIView, TaskDueOverviewAPIView
+from .views import ConsultantViewset, ProfileViewset, DocumentViewset, TaskViewset, GetProfileAPIView, DocumentSearchAPIView, DocumentStatusOverviewAPIView, TaskSearchAPIView, TaskDueOverviewAPIView, ConsultantClientsViewset
 
 router = DefaultRouter()
 router.register(r'consultants', ConsultantViewset, basename='consultant')
 router.register(r'profiles', ProfileViewset, basename='profile')
 router.register(r'documents', DocumentViewset, basename='document')
 router.register(r'tasks', TaskViewset, basename='task')
+router.register(r'consultant-clients', ConsultantClientsViewset, basename='consultant-clients')
 
 urlpatterns = [
     path('', include(router.urls)),

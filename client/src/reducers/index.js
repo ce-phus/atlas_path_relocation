@@ -14,7 +14,8 @@ import {
     documentSearchReducer,
     documentStatusReducer,
     taskSearchReducer,
-    taskDueOverviewReducer
+    taskDueOverviewReducer,
+    getConsultantProfileReducer
 } from "./profileReducers"
 
 import {
@@ -24,6 +25,11 @@ import {
 import {
     budgetReducer
 } from "./budgetReducer"
+
+import {
+    fetchConsultantClientReducer,
+    fetchConsultantStatsReducer
+} from "./consultantReducer"
 
 const allReducers = combineReducers({
     userLoginReducer,
@@ -38,9 +44,13 @@ const allReducers = combineReducers({
     documentStatusReducer,
     taskSearchReducer,
     taskDueOverviewReducer,
+    getConsultantProfileReducer,
 
     progressReducer,
     budgetReducer,
+
+    fetchConsultantClientReducer,
+    fetchConsultantStatsReducer
 });
 
 export default allReducers;

@@ -3,6 +3,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import SideNav from './SideNav';
 import Header from './Header';
 import { Login } from '../pages';
+import { getProfile, getConsultantProfile } from '../actions/profileActions';
+import { CLayout } from '../consultant/components';
 
 const Layout = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -12,25 +14,30 @@ const Layout = ({ children }) => {
 
   const { userInfo, isGuest } = useSelector((state) => state.userLoginReducer);
 
-  // Detect screen size and handle sidebar state accordingly
+  const { profile } = useSelector((state)=>state.getProfileReducer);
+  const { consultant } = useSelector((state)=>state.getConsultantProfileReducer);
+
+  useEffect(()=> {
+    if(userInfo && !isGuest){
+      dispatch(getProfile());
+      dispatch(getConsultantProfile());
+    }
+  }, [dispatch, userInfo, isGuest]);
+
   useEffect(() => {
     const checkScreenSize = () => {
-      const mobile = window.innerWidth < 768; // md breakpoint
+      const mobile = window.innerWidth < 768; 
       setIsMobile(mobile);
-      
-      // On large screens, sidebar should always be open
-      // On medium/small screens, sidebar should start closed
+
       if (!mobile) {
-        setSidebarOpen(true); // Always open on large screens
+        setSidebarOpen(true); 
       } else {
-        setSidebarOpen(false); // Closed on mobile by default
+        setSidebarOpen(false);
       }
     };
 
-    // Initial check
     checkScreenSize();
 
-    // Add resize listener
     window.addEventListener('resize', checkScreenSize);
     
     return () => {
@@ -39,14 +46,11 @@ const Layout = ({ children }) => {
   }, []);
 
   const toggleSidebar = () => {
-    // Only allow toggling on medium screens and below
     if (isMobile) {
       setSidebarOpen((prev) => !prev);
     }
-    // On large screens, do nothing (sidebar stays open)
   };
 
-  // Close sidebar when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isMobile && 
@@ -67,6 +71,14 @@ const Layout = ({ children }) => {
     return <Login />;
   }
 
+if (consultant) {
+  return (
+    <div>
+      <CLayout />
+    </div>
+  )
+}
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-dark overflow-y-auto flex flex-col">
       <Header toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
@@ -78,7 +90,7 @@ const Layout = ({ children }) => {
             transition-all duration-300 ease-in-out
             ${isSidebarOpen 
               ? 'ml-64' 
-              : 'ml-0 md:ml-20' // On large screens, always have margin for the sidebar
+              : 'ml-0 md:ml-20' 
             }
           `}
           style={{ minHeight: 'calc(100vh - 64px)' }}

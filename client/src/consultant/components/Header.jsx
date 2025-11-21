@@ -1,37 +1,27 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Link } from "react-router-dom";
-import { IoNotifications } from "react-icons/io5";
-import { logo } from '../assets';
+import React from 'react'
 import { AiOutlineMenuUnfold } from "react-icons/ai";
-import { FaUser } from "react-icons/fa";
-import { getProfile } from '../actions/profileActions';
-import { GrClose } from "react-icons/gr";
+import { logo } from '../../assets';
+import { Link } from 'react-router-dom';
+import { IoNotifications } from "react-icons/io5";
+import { FaUser, FaPlus } from "react-icons/fa";
+import { useDispatch, useSelector } from 'react-redux';
 
-const Header = ({ toggleSidebar, isSidebarOpen }) => {
-  const dispatch = useDispatch();
-  const { userInfo } = useSelector((state) => state.userLoginReducer);
-
+const Header = () => {
   const { profile, error, loading } = useSelector((state) => state.getProfileReducer);
-
-    useEffect(()=> {
-        if (!profile) {
-            dispatch(getProfile());
-        }
-    }, [dispatch, profile]);
-
   return (
-    <nav className='fixed w-full h-16 p-2 top-0 bg-white border-b border-gray-300 flex items-center justify-between z-50'>
-      <div className='flex items-center'>
+    <nav
+    className='fixed w-full h-16 p-2 top-0 bg-white border-b border-gray-300 flex items-center justify-between z-50'
+    >
+      <div
+      className='flex items-center'>
         <button
-          className='flex items-center text-black p-3 hover:bg-gray-100 rounded-lg transition-colors md:hidden cursor-pointer'
-          onClick={toggleSidebar}
+        className='flex items-center text-black p-3 hover:bg-gray-100 rounded-lg transition-colors md:hidden cursor-pointer'
         >
           <AiOutlineMenuUnfold size={25} />
         </button>
 
         <Link to="/" className="ml-2">
-          <img src={logo} alt="Logo" className='h-8'/>
+          <img src={logo} alt="Logo" className='h-15'/>
         </Link>
       </div>
 
@@ -45,6 +35,10 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             3
           </span>
         </div>
+
+          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+            <FaPlus size={16} className="text-gray-600" />
+          </div>
         
         <Link to={'/profile'} className="flex flex-col items-center space-x-2 cursor-pointer group">
           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
@@ -59,4 +53,4 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   )
 }
 
-export default Header;
+export default Header

@@ -519,8 +519,8 @@ class TaskDueOverviewAPIView(APIView):
                 "has_previous": paginated_tasks.has_previous(),
                 "due_overview": list(due_count),
                 "tasks": serializer.data,
-                "filter_type": filter_type,  # Return the applied filter for frontend
-                "search_query": search_query,  # Return the search query for frontend
+                "filter_type": filter_type,
+                "search_query": search_query, 
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
@@ -529,3 +529,104 @@ class TaskDueOverviewAPIView(APIView):
             traceback.print_exc()
             return Response({"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class ConsultantClientsViewset(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def list(self, request):
+        user  = request.user
+
+        if not hasattr(user, 'consultant_profile'):
+            return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
+        consultant = user.consultant_profile
+        clients = Profile.objects.filter(relocation_consultant=consultant).select_related('user').all().prefetch_related('documents', 'tasks')
+
+        search_query = request.query_params.get('search', '')
+
+        if search_query:
+            clients = clients.filter(
+                models.Q(user__first_name__icontains=search_query) |
+                models.Q(user__last_name__icontains=search_query) |
+                models.Q(user__email__icontains=search_query)
+            )
+
+        progress_filter = request.query_params.get('progress', "")
+        if progress_filter:
+            if progress_filter == "high":
+                clients = clients.filter(overall_progress__gte=75)
+
+            elif progress_filter == "medium":
+                clients = clients.filter(overall_progress__gte=25, overall_progress__lt=75)
+
+            elif progress_filter == "low":
+                clients = clients.filter(overall_progress__lt=25)
+
+        serializer = ProfileSerializer(clients, many=True)
+
+        total_clients = clients.count()
+        avg_progress = clients.aggregate(avg_progress=models.Avg('overall_progress'))['avg_progress'] or 0 
+        high_progress_count = clients.filter(overall_progress__gte=75).count()
+
+        return Response({
+            "clients": serializer.data,
+            "summary": {
+                "total_clients": total_clients,
+                "average_progress": round(avg_progress, 2),
+                "high_progress_clients": high_progress_count,
+                "consultant_capacity": f"{consultant.current_client_count}/{consultant.max_clients}"
+            }
+        })
+    
+    @action(detail=False, methods=['get'])
+    def client_stats(self, request):
+        """Get detailed statistics for consultant's clients"""
+        user = request.user
+        
+        if not hasattr(user, "consultant_profile"):
+            return Response(
+                {"error": "Only consultants can access this endpoint"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        consultant = user.consultant_profile
+        clients = Profile.objects.filter(relocation_consultant=consultant)
+
+        # Relocation type breakdown
+        relocation_stats = (
+            clients
+            .values('relocation_type')
+            .annotate(count=models.Count('id'))
+            .order_by('-count')
+        )
+
+        # Progress distribution
+        progress_distribution = {
+            '0-25%': clients.filter(overall_progress__range=[0, 25]).count(),
+            '26-50%': clients.filter(overall_progress__range=[26, 50]).count(),
+            '51-75%': clients.filter(overall_progress__range=[51, 75]).count(),
+            '76-100%': clients.filter(overall_progress__range=[76, 100]).count(),
+        }
+
+        # Document status summary
+        document_stats = (
+            Document.objects.filter(profile__relocation_consultant=consultant)
+            .values('status')
+            .annotate(count=models.Count('id'))
+            .order_by('status')
+        )
+
+        # Task completion stats
+        total_tasks = Task.objects.filter(profile__relocation_consultant=consultant).count()
+        completed_tasks = Task.objects.filter(
+            profile__relocation_consultant=consultant, 
+            is_completed=True
+        ).count()
+        task_completion_rate = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+        
+        return Response({
+            'relocation_type_breakdown': list(relocation_stats),
+            'progress_distribution': progress_distribution,
+            'document_status': list(document_stats),
+            'task_completion_rate': round(task_completion_rate, 1),
+            'total_tasks': total_tasks,
+            'completed_tasks': completed_tasks
+        })

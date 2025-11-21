@@ -1,7 +1,22 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Login, Register, Home, Profile, Tasks, Documents, Budget } from "./pages"
+import { Index } from './consultant/pages';
+
+import { useSelector } from 'react-redux';
 
 function App() {
+
+  const { consultant } = useSelector((state)=>state.getConsultantProfileReducer);
+
+  if (consultant) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/*" element={<Index />} exact />
+        </Routes>
+      </Router>
+    )
+  }
 
   return (
     <Router>

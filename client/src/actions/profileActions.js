@@ -558,3 +558,28 @@ export const taskDueOverview = (filters = {}) => async (dispatch, getState) => {
         });
     }
 };
+
+
+export const getConsultantProfile = () => async (dispatch, getState) => {
+    try {
+        dispatch({ type: "GET_CONSULTANT_PROFILE_REQUEST" });
+
+        const authHeaders = getAuthHeaders(getState);
+
+        const { data } = await axios.get(`${API_URL}/api/v1/profile/consultants/`, authHeaders);
+
+        console.log("Consultant profile fetched:", data);
+
+        dispatch({
+            type: "GET_CONSULTANT_PROFILE_SUCCESS",
+            payload: data,
+        });
+    } catch (error) {
+        dispatch({
+            type: "GET_CONSULTANT_PROFILE_FAIL",
+            payload: error.response && error.response.data.detail
+                ? error.response.data.detail
+                : error.message,
+        });
+    }
+}

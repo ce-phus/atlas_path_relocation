@@ -174,3 +174,16 @@ export const taskDueOverviewReducer = (state = { overview: {}, loading: false },
             return state;
     }
 };
+
+export const getConsultantProfileReducer = (state = { loading: false, consultant: null, error: null }, action) => {
+    switch (action.type) {
+        case "GET_CONSULTANT_PROFILE_REQUEST":
+            return { ...state, loading: true };
+        case "GET_CONSULTANT_PROFILE_SUCCESS":
+            return { loading: false, consultant: action.payload };
+        case "GET_CONSULTANT_PROFILE_FAIL":
+            return { loading: false, error: action.payload };
+        default:
+            return state;
+    }
+}
