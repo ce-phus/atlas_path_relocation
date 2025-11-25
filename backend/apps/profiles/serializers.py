@@ -17,7 +17,7 @@ class ConsultantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consultant
         fields = [
-            'id', 'employee_id', 'user', "full_name", "email", "specialization", "country", "years_experience", "bio", "expertise", "is_active", "max_clients", "current_client_count", "work_phone", "work_email", "availability_status", "created_at", "updated_at"
+            'id', 'employee_id', 'user', "full_name", "email", "specialization", "country", "years_experience", "bio", "expertise", "is_active", "max_clients", "current_client_count", "work_phone", "work_email", "availability_status", "created_at", "updated_at", "is_consultant"
             ]
         
         read_only_fields = ['employee_id', 'created_at', 'updated_at', "current_client_count"]
@@ -99,7 +99,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'housing_budget_max', 'preferred_neighborhoods', 'preferred_contact_method',
             'notification_preferences', 'relocation_consultant', 'consultant_details',
             'consultant_name', 'consultant_employee_id', 'overall_progress',
-            'current_stage', 'documents', 'tasks', 'created_at', 'updated_at', "consultant"
+            'current_stage', 'documents', 'tasks', 'created_at', 'updated_at', "consultant", 'is_consultant'
         ]
         read_only_fields = ['created_at', 'updated_at']
 

@@ -17,12 +17,10 @@ const Layout = ({ children }) => {
   const { profile } = useSelector((state)=>state.getProfileReducer);
   const { consultant } = useSelector((state)=>state.getConsultantProfileReducer);
 
-  useEffect(()=> {
-    if(userInfo && !isGuest){
-      dispatch(getProfile());
-      dispatch(getConsultantProfile());
-    }
-  }, [dispatch, userInfo, isGuest]);
+  // useEffect(()=> {
+  //   dispatch(getProfile());
+  //   dispatch(getConsultantProfile());
+  // }, [dispatch]);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -71,13 +69,19 @@ const Layout = ({ children }) => {
     return <Login />;
   }
 
-if (consultant) {
-  return (
-    <div>
-      <CLayout />
-    </div>
-  )
-}
+
+  const isConsultant = profile?.is_consultant === true && consultant;
+  console.log(" Layout - isConsultant:", isConsultant);
+  console.log("Layout profile:", profile);
+
+  if (isConsultant) {
+    return (
+      <CLayout>
+        {children}
+      </CLayout>
+    )
+  }
+
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-dark overflow-y-auto flex flex-col">

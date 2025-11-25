@@ -5,7 +5,7 @@ from .models import Consultant, Profile, Document, Task
 @admin.register(Consultant)
 class ConsultantAdmin(admin.ModelAdmin):
     list_display = ('employee_id', 'user', 'specialization', 'is_active', 'current_client_count')
-    readonly_fields = ('employee_id', 'current_client_count')
+    readonly_fields = ('employee_id', 'current_client_count', "is_consultant")
     search_fields = ('employee_id', 'user__first_name', 'user__last_name')
     list_filter = ('specialization', 'is_active', 'availability_status')
 

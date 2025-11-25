@@ -25,6 +25,8 @@ class Consultant(TimeStampedUUIDModel):
         verbose_name=_("Specialization")
     )
 
+    is_consultant = models.BooleanField(default=True, verbose_name=_("Is Consultant"))
+
     country = CountryField(
         verbose_name=_("Country"), default="KE", blank=False, null=False
     )
@@ -60,6 +62,7 @@ class Consultant(TimeStampedUUIDModel):
             count = Consultant.objects.count()
             self.employee_id = f"ATP{count + 1:04d}"
         super().save(*args, **kwargs)
+        self.user.profile.is_consultant = True
 
     def __str__(self):
         if self.user and hasattr(self.user, 'get_full_name'):
@@ -89,6 +92,11 @@ class Profile(TimeStampedUUIDModel):
         null=True,
         blank=True,
         verbose_name=_("Date of Birth")
+    )
+
+    is_consultant = models.BooleanField(
+        default=False,
+        verbose_name=_("Is Consultant")
     )
 
     country = CountryField(

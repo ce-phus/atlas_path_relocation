@@ -59,6 +59,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_short_name(self):
         return self.username
+    
+    @property
+    def is_consultant(self):
+        return hasattr(self, 'consultant_profile')
 
 class ReasonForAccountDeletion(TimeStampedUUIDModel):
     """

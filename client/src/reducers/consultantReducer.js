@@ -1,4 +1,4 @@
-export const fetchConsultantClientReducer = (state = { clients_data: [], loading:false, error:null }, action) => {
+export const fetchConsultantClientReducer = (state = { clients_data: null, loading:false, error:null }, action) => {
     switch (action.type) {
         case 'CONSULTANTS_CLIENTS_REQUEST':
             return { loading: true, clients_data: [] };
@@ -11,7 +11,7 @@ export const fetchConsultantClientReducer = (state = { clients_data: [], loading
     }
 }
 
-export const fetchConsultantStatsReducer = (state = { stats_data: [], loading:false, error:null }, action) => {
+export const fetchConsultantStatsReducer = (state = { stats_data: null, loading:false, error:null }, action) => {
     switch (action.type) {
         case 'CONSULTANT_STATS_REQUEST':
             return { loading: true, stats_data: [] };

@@ -53,9 +53,10 @@ export const fetchConsultantStats = () => async (dispatch, getState) => {
     } catch (error) {
         dispatch({
             type: 'CONSULTANT_STATS_FAIL',
-            payload: error.response && error.response.data.error
-                ? error.response.data.error
-                : error.response.data.error,
+            payload:
+                error.response?.data?.error ??
+                error.response?.data ??
+                error.message,
         });
     }
 }

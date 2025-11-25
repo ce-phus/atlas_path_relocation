@@ -333,8 +333,16 @@ class GetProfileAPIView(APIView):
     def get(self, request, format=None):
         user = request.user
         try:
-            profile = Profile.objects.get(user=user)
-            serializer = ProfileSerializer(profile)
+            if user.is_consultant:
+                profile = Consultant.objects.get(user=user)
+                if not profile:
+                    return Response({"error": "Consultant profile not found."}, status=status.HTTP_404_NOT_FOUND)
+                serializer = ConsultantSerializer(profile)
+            else:
+                profile = Profile.objects.get(user=user)
+                if not profile:
+                    return Response({"error": "User profile not found."}, status=status.HTTP_404_NOT_FOUND)
+                serializer = ProfileSerializer(profile)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Profile.DoesNotExist:
             return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)

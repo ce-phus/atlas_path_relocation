@@ -10,21 +10,19 @@ const Home = () => {
   const {  tasks, documents } = useSelector((state) => state.profileReducer);
 
   useEffect(()=> {
-    if (!profile) {
-      dispatch(loadProfile());
-    };
-
-    if (!documents) {
-      dispatch(loadDocuments())
-    }
-
-    if (!tasks) {
-      dispatch(loadTasks());
-    };
+    // Load core dashboard data ONCE
+    dispatch(loadProfile());
+    dispatch(loadDocuments());
+    dispatch(loadTasks());
+  }, [dispatch]);
+  
+  useEffect(() => {
+    // Load consultants AFTER profile loads
     if (profile?.relocation_consultant) {
       dispatch(loadAvailableConsultants());
-    };
-  }, [dispatch, profile, tasks, profile?.relocation_consultant, documents]);
+    }
+  }, [dispatch, profile?.relocation_consultant]);
+  
 
   useEffect(() => {
     if (error === "User not found") {
