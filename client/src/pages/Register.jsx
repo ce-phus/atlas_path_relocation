@@ -456,7 +456,7 @@ const Register = () => {
             <p className='text-black/70 text-sm font-light'>
               Already have an account?{' '}
               <motion.a 
-                href='/sign-in' 
+                href='/' 
                 className='text-black font-medium hover:text-black/80 transition-colors duration-200'
                 whileHover={{ scale: 1.05, color: "#1F1C7A" }}
                 whileTap={{ scale: 0.95 }}

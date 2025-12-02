@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 
 const ClientDashboard = ({ stats_data }) => {
     const { clients_data } = useSelector((state) => state.fetchConsultantClientReducer);
     const clients = clients_data?.clients || [];
     const summary = clients_data?.summary || {};
+    const navigate = useNavigate();
     
     const [searchTerm, setSearchTerm] = useState('');
     const [progressFilter, setProgressFilter] = useState('');
@@ -57,6 +59,10 @@ const ClientDashboard = ({ stats_data }) => {
     };
 
     const progressDistribution = getProgressDistribution();
+
+    const handleClientDetailsRoute = (client) => {
+        navigate(`/client/${client.id}`);
+    }
 
     return (
         <div className='min-h-screen bg-gray-50 py-8'>
@@ -362,7 +368,9 @@ const ClientDashboard = ({ stats_data }) => {
 
                                     {/* Actions */}
                                     <div className="flex flex-col space-y-3 lg:items-end">
-                                        <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 font-medium">
+                                        <button 
+                                        onClick={() => handleClientDetailsRoute(client)}
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 font-medium cursor-pointer">
                                             View Details
                                         </button>
                                         <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium">

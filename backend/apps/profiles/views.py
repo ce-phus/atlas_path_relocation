@@ -73,12 +73,11 @@ class ProfileViewset(viewsets.ModelViewSet):
         if self.action == "create":
             return ProfileCreateSerializer
         elif self.action in ["update", "partial_update"]:
-            if user.is_consultant:
+            if hasattr(user, "consultant_profile") and self.get_object() == user.consultant_profile:
                 return ConsultantUpdateSerialzier
             return ProfileUpdateSerializer
-        if user.is_consultant:
-            return ConsultantUpdateSerialzier
         return ProfileSerializer
+
     
     def get_queryset(self):
         user = self.request.user
@@ -147,6 +146,21 @@ class ProfileViewset(viewsets.ModelViewSet):
 
         profile.save()
         return Response({"status": "Profile progress updated."}, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=["get"])
+    def client_details(self, request, id=None):
+       
+        try:
+            profile = Profile.objects.get(id=id)
+        except Profile.DoesNotExist:
+            return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        user = request.user
+        if not (hasattr(user, "consultant_profile") and profile.relocation_consultant == user.consultant_profile) or user.is_staff:
+            return Response({"error": "You do not have permission to view this profile."}, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = ProfileSerializer(profile)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
 
 class DocumentViewset(viewsets.ModelViewSet):

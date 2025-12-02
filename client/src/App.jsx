@@ -1,11 +1,12 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Login, Register, Home, Profile, Tasks, Documents, Budget } from "./pages"
-import { Index, Cprofile, EditCprofile } from './consultant/pages';
+import { Index, Cprofile, EditCprofile, ClientProfile } from './consultant/pages';
 import { logo } from './assets';
 
 import { useSelector, useDispatch } from 'react-redux';
 import { getProfile } from './actions/profileActions';
 import React from 'react';
+import { logout } from './actions/userActions';
 
 function App() {
   const { consultant } = useSelector(
@@ -16,6 +17,14 @@ function App() {
 
   const { profile, loading } = useSelector((state)=> state.getProfileReducer)
   console.log(" Profile:", profile);
+
+  const { userInfo } = useSelector((state) => state.userLoginReducer);
+
+  React.useEffect(()=> {
+    if (!userInfo) {
+      dispatch(logout());
+    }
+  }, [dispatch, userInfo]);
 
   React.useEffect(()=> {
       dispatch(getProfile());
@@ -57,6 +66,7 @@ function App() {
             <Route path="/*" element={<Index />} />
             <Route path="/profile" element={<Cprofile />} />
             <Route path='/edit' element={<EditCprofile />} />
+            <Route path='/client/:id' element={<ClientProfile />} />
           </>
         ) : (
           <>

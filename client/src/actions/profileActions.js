@@ -56,14 +56,16 @@ export const getProfile = () => async (dispatch, getState) => {
     }
 };
 
-export const loadProfile = () => async(dispatch, getState) => {
+export const loadProfile = (id) => async(dispatch, getState) => {
     try {
         dispatch({ type: "PROFILE_LOAD_REQUEST" });
 
         const authHeaders = getAuthHeaders(getState);
 
+        const url = id ? `${API_URL}/api/v1/profile/profiles/${id}/client_details/`: `${API_URL}/api/v1/profile/profiles/`;
+
         // Correct endpoint based on your URLs
-        const {data} = await axios.get(`${API_URL}/api/v1/profile/profiles/`, authHeaders);
+        const {data} = await axios.get(url, authHeaders);
 
         console.log("Profile data loaded:", data);
 
