@@ -11,7 +11,8 @@ from .serializers import (
     DocumentSerializer,
     TaskSerializer,
     ProfileCreateSerializer,
-    ProfileUpdateSerializer
+    ProfileUpdateSerializer,
+    ConsultantUpdateSerialzier
 )
 from django.db import models
 from rest_framework.views import APIView
@@ -68,10 +69,15 @@ class ProfileViewset(viewsets.ModelViewSet):
     lookup_field = "id"
 
     def get_serializer_class(self):
+        user = self.request.user
         if self.action == "create":
             return ProfileCreateSerializer
         elif self.action in ["update", "partial_update"]:
+            if user.is_consultant:
+                return ConsultantUpdateSerialzier
             return ProfileUpdateSerializer
+        if user.is_consultant:
+            return ConsultantUpdateSerialzier
         return ProfileSerializer
     
     def get_queryset(self):

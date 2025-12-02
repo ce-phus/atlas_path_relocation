@@ -146,3 +146,11 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
             'preferred_contact_method', 'notification_preferences',
             'relocation_consultant', 'overall_progress', 'current_stage'
         ]
+
+class ConsultantUpdateSerialzier(serializers.ModelSerializer):
+    class Meta:
+        model = Consultant
+        fields = [
+            "specialization", "country", "years_experience", "bio", "expertise", 
+            "is_active", "max_clients", "work_phone", "work_email", "availability_status",
+        ]

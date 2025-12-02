@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Login, Register, Home, Profile, Tasks, Documents, Budget } from "./pages"
-import { Index, Cprofile } from './consultant/pages';
+import { Index, Cprofile, EditCprofile } from './consultant/pages';
 import { logo } from './assets';
 
 import { useSelector, useDispatch } from 'react-redux';
@@ -56,6 +56,7 @@ function App() {
           <>
             <Route path="/*" element={<Index />} />
             <Route path="/profile" element={<Cprofile />} />
+            <Route path='/edit' element={<EditCprofile />} />
           </>
         ) : (
           <>

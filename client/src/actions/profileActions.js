@@ -1,19 +1,21 @@
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL
+import { logout } from "./userActions";
 
-export const getAuthHeaders = (getState) => {
+export const getAuthHeaders = (getState, dispatch) => {
     const { userLoginReducer } = getState();
     const { userInfo } = userLoginReducer;
 
     if (!userInfo?.access) {
         console.error("No access token found");
         throw new Error("Authentication required");
+        dispatch(logout());
     }
 
     return {
         headers: {
-            Authorization: `Bearer ${userInfo.access}`,
+            Authorization: `Bearer ${userInfo?.access}`,
             "Content-Type": "application/json",
         }
     }
@@ -28,7 +30,7 @@ export const getProfile = () => async (dispatch, getState) => {
         const config = {
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${userInfo.access}`,
+                Authorization: `Bearer ${userInfo?.access}`,
             },
         };
 
@@ -39,15 +41,16 @@ export const getProfile = () => async (dispatch, getState) => {
             payload: data,
         });
     } catch (error) {
+        console.log("data error: ", error)
         dispatch({
             type: "GET_PROFILE_FAIL",
-            payload: error.response && error.response.data.detail
+            payload: error.response && error.response.data
                 ? error.response.data.detail
-                : error.message,
+                : error.reponse.data,
         });
         if (error.response.data.detail === "Given token not valid for any token type") {
             console.log("error response: ",error.response.data.detail)
-            // dispatch(logout());
+            dispatch(logout());
             
           }
     }
@@ -67,9 +70,9 @@ export const loadProfile = () => async(dispatch, getState) => {
         // Since your viewset filters by user, get the first profile
         const userProfile = data.results ? data.results[0] : data[0];
         
-        if (!userProfile) {
-            throw new Error("No profile found for current user");
-        }
+        // if (!userProfile) {
+        //     throw new Error("No profile found for current user");
+        // }
 
         dispatch({
             type: "PROFILE_LOAD_SUCCESS",

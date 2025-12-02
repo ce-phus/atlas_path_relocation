@@ -2,10 +2,16 @@ import React from 'react'
 import { CLayout } from '../components'
 import { useSelector } from 'react-redux'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 
 const Cprofile = () => {
   const { profile, loading, error } = useSelector((state) => state.getProfileReducer);
   console.log("cProfile: ", profile)
+  const navigate = useNavigate();
+
+  const handleRoute = () => {
+    navigate('/edit');
+  }
   
   // Extract consultant data from profile
   const consultant = profile || {};
@@ -333,7 +339,9 @@ const Cprofile = () => {
             transition={{ delay: 0.4 }}
             className="mt-8 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4"
           >
-            <button className="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors duration-200">
+            <button
+            onClick={handleRoute}
+            className="flex-1 bg-indigo-600 cursor-pointer text-white px-6 py-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors duration-200">
               Edit Profile
             </button>
             <button className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-50 transition-colors duration-200">
