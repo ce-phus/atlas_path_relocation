@@ -1,6 +1,6 @@
-import React from 'react'
+import React,{ useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { CLayout } from '../components'
+import { CLayout, ViewDocs } from '../components'
 import { loadProfile } from '../../actions/profileActions'
 import { 
   FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, 
@@ -8,12 +8,17 @@ import {
   FaGlobe, FaCity, FaTasks, FaMoneyBill,
   FaUsers, FaUserTie, FaBuilding
 } from 'react-icons/fa'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
 
 const ClientProfile = () => {
   const { profile, loading, error } = useSelector((state) => state.profileReducer);
+  const [ docModal, setDocModal ] = useState(false);
   const dispatch = useDispatch();
+
+  const toggleDocModal = () => {
+    setDocModal(!docModal);
+  }
   
   React.useEffect(() => {
     dispatch(loadProfile());
@@ -377,7 +382,9 @@ const ClientProfile = () => {
               <p>Last updated: {formatDate(updated_at)}</p>
             </div>
             <div className="mt-2 md:mt-0">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors mr-3">
+              <button
+              onClick={toggleDocModal}
+              className="px-4 cursor-pointer py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors mr-3">
                 View Documents
               </button>
                 <button className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
@@ -387,6 +394,12 @@ const ClientProfile = () => {
           </div>
         </div>
       </motion.div>
+
+      {docModal && 
+      <AnimatePresence>
+        <ViewDocs loading={loading} documents={documents} onClose={toggleDocModal} />
+      </AnimatePresence>
+      }
     </CLayout>
   )
 }

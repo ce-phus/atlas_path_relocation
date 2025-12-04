@@ -352,7 +352,7 @@ export const updateDocumentStatus = (documentId, statusData) => async(dispatch, 
 
         const authHeaders = getAuthHeaders(getState);
 
-        const {data} = await axios.patch(
+        const {data} = await axios.post(
             `${API_URL}/api/v1/profile/documents/${documentId}/update_status/`,
             statusData,
             authHeaders

@@ -185,7 +185,7 @@ class DocumentViewset(viewsets.ModelViewSet):
         return Document.objects.none()
     
     @action(detail=True, methods=["post"])
-    def update_status(self, request, pk=None):
+    def update_status(self, request, id=None):
         document = self.get_object()
         new_status = request.data.get("status")
         consultant = getattr(request.user, 'consultant_profile', None)

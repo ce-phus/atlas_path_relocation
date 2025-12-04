@@ -13,6 +13,11 @@ const initialState = {
     taskerror: null,
     overdueloading: false,
     overdueerror: null,
+
+    statusLoading: false,
+    statusSuccess: false,
+    statusError: null,
+    updatedDocument: null,
 }
 
 export const profileReducer = (state = initialState, action) => {
@@ -23,8 +28,10 @@ export const profileReducer = (state = initialState, action) => {
         case "PROFILE_PROGRESS_UPDATE_REQUEST":
         case "ASSIGN_CONSULTANT_REQUEST":
             return { ...state, loading: true, error: null, success: false };
+            
         case "PROFILE_LOAD_SUCCESS":
             return { ...state, loading: false, profile: action.payload, error: null };
+            
         case "PROFILE_UPDATE_SUCCESS":
         case "PROFILE_PROGRESS_UPDATE_SUCCESS":
         case "ASSIGN_CONSULTANT_SUCCESS":
@@ -34,48 +41,52 @@ export const profileReducer = (state = initialState, action) => {
         case "PROFILE_UPDATE_FAIL":
         case "PROFILE_PROGRESS_UPDATE_FAIL":
         case "ASSIGN_CONSULTANT_FAIL":
-            return { ...state, loading: false, error: action.payload };
+            return { ...state, loading: false, error: action.payload, success: false };
                             
-        //  === CONSULTANTS ===
+        // === CONSULTANTS ===
         case "AVAILABLE_CONSULTANTS_LOAD_REQUEST":
             return { ...state, loading: true, error: null };
+            
         case "AVAILABLE_CONSULTANTS_LOAD_SUCCESS":
             return { ...state, loading: false, consultants: action.payload, error: null };
+            
         case "AVAILABLE_CONSULTANTS_LOAD_FAIL":
             return { ...state, loading: false, error: action.payload };
 
-        // === DOCUMENTS ===
+        // === DOCUMENTS LOADING ===
         case "DOCUMENTS_LOAD_REQUEST":
-        case "DOCUMENTS_UPLOAD_REQUEST":
-        case "DOCUMENT_STATUS_UPDATE_REQUEST":
             return { ...state, documentloading: true, documenterror: null };
-
+            
         case "DOCUMENTS_LOAD_SUCCESS":
-        case "DOCUMENTS_UPLOAD_SUCCESS":
-        case "DOCUMENT_STATUS_UPDATE_SUCCESS":
             return { ...state, documentloading: false, documents: action.payload, documenterror: null };
 
         case "DOCUMENTS_LOAD_FAIL":
-        case "DOCUMENTS_UPLOAD_FAIL":
-        case "DOCUMENT_STATUS_UPDATE_FAIL":
             return { ...state, documentloading: false, documenterror: action.payload };
+
+        // === DOCUMENT UPLOAD ===
+        case "DOCUMENTS_UPLOAD_REQUEST":
+            return { ...state, documentloading: true, documenterror: null };
+            
+        case "DOCUMENTS_UPLOAD_SUCCESS":
+            return { ...state, documentloading: false, success: true, documenterror: null };
+
+        case "DOCUMENTS_UPLOAD_FAIL":
+            return { ...state, documentloading: false, documenterror: action.payload, success: false };
 
         // === TASKS ===
         case "TASKS_LOAD_REQUEST":
-        case "TASK_CREATE_REQUEST":
         case "TASK_COMPLETE_REQUEST":
             return { ...state, taskloading: true, taskerror: null };
+            
         case "TASKS_LOAD_SUCCESS":
             return { ...state, taskloading: false, tasks: action.payload, taskerror: null };
 
-        case "TASK_CREATE_SUCCESS":
         case "TASK_COMPLETE_SUCCESS":
             return { ...state, taskloading: false, success: true, taskerror: null };
 
         case "TASKS_LOAD_FAIL":
-        case "TASK_CREATE_FAIL":
         case "TASK_COMPLETE_FAIL":
-            return { ...state, taskloading: false, taskerror: action.payload };
+            return { ...state, taskloading: false, taskerror: action.payload, success: false };
 
         // === OVERDUE TASKS ===
         case "OVERDUE_TASKS_LOAD_REQUEST":
@@ -90,7 +101,7 @@ export const profileReducer = (state = initialState, action) => {
         default:
             return state;
     }
-}
+};
 
 export const getProfileReducer = (state = initialState, action) => {
     switch (action.type) {
@@ -187,3 +198,40 @@ export const getConsultantProfileReducer = (state = { loading: false, consultant
             return state;
     }
 }
+
+export const documentUpdateStatusReducer = (state = initialState, action) => {
+    switch (action.type) {
+        case "DOCUMENT_STATUS_UPDATE_REQUEST":
+            return { 
+                ...state, 
+                statusLoading: true, 
+                statusSuccess: false,
+                statusError: null,
+                updatedDocument: null
+            };
+
+        case "DOCUMENT_STATUS_UPDATE_SUCCESS":
+            return { 
+                ...state, 
+                statusLoading: false, 
+                statusSuccess: true,
+                statusError: null,
+                updatedDocument: action.payload
+            };
+
+        case "DOCUMENT_STATUS_UPDATE_FAIL":
+            return { 
+                ...state, 
+                statusLoading: false, 
+                statusSuccess: false,
+                statusError: action.payload,
+                updatedDocument: null
+            };
+
+        case "DOCUMENT_STATUS_UPDATE_RESET":
+            return documentStatusInitialState;
+
+        default:
+            return state;
+    }
+};
