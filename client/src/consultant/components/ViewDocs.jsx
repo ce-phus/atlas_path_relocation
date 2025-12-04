@@ -28,7 +28,7 @@ const modalVariants = {
 
 const API_URL = import.meta.env.VITE_API_URL
 
-const ViewDocs = ({ onClose, documents: initialDocuments }) => {
+const ViewDocs = ({ onClose, documents: initialDocuments, full_name }) => {
     const dispatch = useDispatch();
 
     const { 
@@ -130,7 +130,7 @@ const ViewDocs = ({ onClose, documents: initialDocuments }) => {
                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
                     <div>
                         <h3 className="text-xl font-bold tracking-tight text-center mb-6 bg-gradient-to-r from-gray-800 to-indigo-600 bg-clip-text text-transparent inline-block [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]">
-                            Client Documents
+                            {full_name}'s Documents
                         </h3>
                         <p className="text-sm text-gray-500 mt-1">
                             {documents.length} document{documents.length !== 1 ? 's' : ''} found

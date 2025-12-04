@@ -289,40 +289,153 @@ const ClientProfile = () => {
                   <FaFileAlt className="text-blue-600" />
                   <h2 className="text-lg font-semibold text-gray-800">Documents</h2>
                 </div>
-                <span className="bg-blue-100 text-blue-600 text-sm font-medium px-3 py-1 rounded-full">
-                  {documents?.length || 0} files
-                </span>
+                <div className="flex items-center space-x-3">
+                  <span className="bg-blue-100 text-blue-600 text-sm font-medium px-3 py-1 rounded-full">
+                    {documents?.length || 0} files
+                  </span>
+                  <button
+                    onClick={toggleDocModal}
+                    className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer font-medium"
+                  >
+                    Manage
+                  </button>
+                </div>
               </div>
             </div>
             <div className="p-6">
               {documents?.length > 0 ? (
-                <div className="space-y-3">
-                  {documents.map((doc, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-white border border-gray-200 rounded-lg">
-                          <FaFileAlt className="text-gray-400" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800">{doc.name || 'Document'}</p>
-                          <p className="text-sm text-gray-500">Uploaded: {formatDate(doc.uploaded_at)}</p>
-                        </div>
+                <div className="space-y-4">
+                  {/* Status Summary */}
+                  <div className="grid grid-cols-4 gap-3 mb-4">
+                    <div className="text-center p-2 bg-blue-50 rounded-lg">
+                      <div className="text-lg font-bold text-blue-600">
+                        {documents.filter(d => d.status === 'submitted').length}
                       </div>
-                      <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                        View
-                      </button>
+                      <div className="text-xs text-blue-800">Submitted</div>
                     </div>
-                  ))}
+                    <div className="text-center p-2 bg-yellow-50 rounded-lg">
+                      <div className="text-lg font-bold text-yellow-600">
+                        {documents.filter(d => d.status === 'awaiting review').length}
+                      </div>
+                      <div className="text-xs text-yellow-800">Pending</div>
+                    </div>
+                    <div className="text-center p-2 bg-green-50 rounded-lg">
+                      <div className="text-lg font-bold text-green-600">
+                        {documents.filter(d => d.status === 'approved').length}
+                      </div>
+                      <div className="text-xs text-green-800">Approved</div>
+                    </div>
+                    <div className="text-center p-2 bg-red-50 rounded-lg">
+                      <div className="text-lg font-bold text-red-600">
+                        {documents.filter(d => d.status === 'rejected').length}
+                      </div>
+                      <div className="text-xs text-red-800">Rejected</div>
+                    </div>
+                  </div>
+
+                  {/* Recent Documents */}
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium text-gray-700">Recent Documents</h3>
+                    {documents.slice(0, 3).map((doc, index) => {
+                      const getStatusColor = (status) => {
+                        const statusMap = {
+                          'submitted': 'bg-blue-100 text-blue-800 border-blue-200',
+                          'awaiting review': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                          'approved': 'bg-green-100 text-green-800 border-green-200',
+                          'rejected': 'bg-red-100 text-red-800 border-red-200'
+                        };
+                        return statusMap[status] || 'bg-gray-100 text-gray-800 border-gray-200';
+                      };
+
+                      const getFileIcon = (documentType) => {
+                        if (!documentType) return '📄';
+                        const type = documentType.toLowerCase();
+                        if (type.includes('passport') || type.includes('id')) return '🪪';
+                        if (type.includes('certificate')) return '📜';
+                        if (type.includes('contract') || type.includes('agreement')) return '📝';
+                        if (type.includes('bill') || type.includes('invoice')) return '🧾';
+                        if (type.includes('photo') || type.includes('image')) return '🖼️';
+                        return '📄';
+                      };
+
+                      return (
+                        <div 
+                          key={doc.id || index} 
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
+                        >
+                          <div className="flex items-center space-x-3 flex-1 min-w-0">
+                            <div className="w-10 h-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <span className="text-lg">{getFileIcon(doc.document_type)}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <p className="font-medium text-gray-800 truncate">
+                                  {doc.document_name || doc.document_type || `Document ${index + 1}`}
+                                </p>
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${getStatusColor(doc.status)}`}>
+                                  {doc.status || 'Unknown'}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-3 text-xs text-gray-500">
+                                <span className="truncate max-w-[120px]">{doc.document_type}</span>
+                                <span>•</span>
+                                <span>{doc.created_at ? formatDate(doc.created_at) : 'N/A'}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2 ml-4">
+                            {doc.reviewed_by_name && (
+                              <span className="text-xs text-gray-500 hidden md:block">
+                                by {doc.reviewed_by_name}
+                              </span>
+                            )}
+                            <svg 
+                              className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" 
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* View All Button */}
+                    {documents.length > 3 && (
+                      <button
+                        onClick={toggleDocModal}
+                        className="w-full mt-4 py-2.5 bg-blue-50 text-blue-600 rounded-lg font-medium hover:bg-blue-100 transition-colors flex items-center justify-center space-x-2"
+                      >
+                        <span>View All Documents</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <FaFileAlt className="mx-auto text-gray-300" size={48} />
-                  <p className="text-gray-500 mt-2">No documents uploaded yet</p>
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <FaFileAlt className="text-gray-400" size={32} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Documents Yet</h3>
+                  <p className="text-gray-500 mb-4 max-w-md mx-auto">
+                    This client hasn't uploaded any documents yet. Documents will appear here once uploaded.
+                  </p>
+                  <button
+                    onClick={toggleDocModal}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
+                  >
+                    <FaFileAlt className="text-white" size={16} />
+                    <span>Manage Documents</span>
+                  </button>
                 </div>
               )}
             </div>
           </motion.div>
-
           {/* Tasks */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -397,7 +510,7 @@ const ClientProfile = () => {
 
       {docModal && 
       <AnimatePresence>
-        <ViewDocs loading={loading} documents={documents} onClose={toggleDocModal} />
+        <ViewDocs loading={loading} full_name={full_name} documents={documents} onClose={toggleDocModal} />
       </AnimatePresence>
       }
     </CLayout>
