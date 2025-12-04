@@ -378,25 +378,59 @@ export const updateDocumentStatus = (documentId, statusData) => async(dispatch, 
 
 // Create New task (for consultants)
 
-export const createTask = (taskData) => async(dispatch, getState) => {
+export const createTask = (taskData) => async (dispatch, getState) => {
     try {
         dispatch({ type: "TASK_CREATE_REQUEST" });
+
         const authHeaders = getAuthHeaders(getState);
 
-        const {data} = await axios.post(`${API_URL}/api/v1/profile/tasks/`, taskData, authHeaders);
-
-        console.log("Task created:", data);
+        const { data } = await axios.post(
+            `${API_URL}/api/v1/profile/tasks/`,
+            taskData,
+            authHeaders
+        );
 
         dispatch({
             type: "TASK_CREATE_SUCCESS",
             payload: data,
-        })
-    } catch(error) {
+        });
+
+    } catch (error) {
         dispatch({
             type: "TASK_CREATE_FAIL",
-            payload: error.response && error.response.data.detail
-                ? error.response.data.detail
-                : error.message,
+            payload:
+                error.response && error.response.data.detail
+                    ? error.response.data.detail
+                    : error.message,
+        });
+    }
+};
+
+
+export const updateTask = (taskData) => async (dispatch, getState) => {
+    try {
+        dispatch({ type: "TASK_UPDATE_REQUEST" });
+
+        const authHeaders = getAuthHeaders(getState);
+
+        const { data } = await axios.patch(
+            `${API_URL}/api/v1/profile/tasks/${taskData.id}/`,
+            taskData,
+            authHeaders
+        );
+
+        dispatch({
+            type: "TASK_UPDATE_SUCCESS",
+            payload: data,
+        });
+
+    } catch (error) {
+        dispatch({
+            type: "TASK_UPDATE_FAIL",
+            payload:
+                error.response && error.response.data.detail
+                    ? error.response.data.detail
+                    : error.message,
         });
     }
 }

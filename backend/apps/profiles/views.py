@@ -12,7 +12,8 @@ from .serializers import (
     TaskSerializer,
     ProfileCreateSerializer,
     ProfileUpdateSerializer,
-    ConsultantUpdateSerialzier
+    ConsultantUpdateSerialzier,
+    TaskCreateSerializer
 )
 from django.db import models
 from rest_framework.views import APIView
@@ -20,6 +21,7 @@ from rest_framework.views import APIView
 from django.core.paginator import Paginator
 from datetime import datetime
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
 
 class ConsultantViewset(viewsets.ModelViewSet):
@@ -238,6 +240,11 @@ class TaskViewset(viewsets.ModelViewSet):
     search_fields = ["title", "description", "profile__user__first_name", "profile__user__last_name"]
     ordering_fields = ["due_date", "created_at", "is_completed"]
     lookup_field = 'id'
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return TaskCreateSerializer
+        return TaskSerializer
     
     def get_queryset(self):
         user = self.request.user
@@ -250,6 +257,17 @@ class TaskViewset(viewsets.ModelViewSet):
             return self.queryset
         
         return Task.objects.none()
+    
+    def perform_create(self, serializer):
+        profile_id = serializer.validated_data.get('profile')
+
+        try:
+            profile = Profile.objects.get(id=profile_id)
+        except Profile.DoesNotExist:
+            raise ValidationError({"profile": "Profile not found."})
+
+        serializer.save(profile=profile)
+
     
     @action(detail=True, methods=["post"])
     def mark_complete(self, request, id=None):  

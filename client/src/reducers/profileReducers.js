@@ -103,6 +103,19 @@ export const profileReducer = (state = initialState, action) => {
     }
 };
 
+export const createTaskReducer = (state = initialState, action) => {
+    switch (action.type) {
+        case "TASK_CREATE_REQUEST":
+            return { ...state, loading: true, error: null, success: false };
+        case "TASK_CREATE_SUCCESS":
+            return { ...state, loading: false, success: true, error: null };
+        case "TASK_CREATE_FAIL":
+            return { ...state, loading: false, error: action.payload, success: false };
+        default:
+            return state;
+    }
+}
+
 export const getProfileReducer = (state = initialState, action) => {
     switch (action.type) {
         case "GET_PROFILE_REQUEST":

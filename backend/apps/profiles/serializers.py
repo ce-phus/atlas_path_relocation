@@ -63,6 +63,15 @@ class DocumentSerializer(serializers.ModelSerializer):
             'status', 'reviewed_by', 'reviewed_by_name', 'client_name', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at', "profile"]
+        
+
+class TaskCreateSerializer(serializers.ModelSerializer):
+    profile = serializers.UUIDField(write_only=True)
+
+    class Meta:
+        model = Task
+        fields = ["id", "title", "description", "stage", "due_date", "profile"]
+
 
 class TaskSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source='profile.user.get_full_name', read_only=True)
@@ -72,10 +81,21 @@ class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = [
-            'id', 'profile', 'title', 'description', 'due_date', 'due_date_formatted',
-            'is_completed', 'client_name', 'created_at', 'updated_at', 'stage_display'
+            'id',
+            'profile',
+            'title',
+            'description',
+            'due_date',
+            'due_date_formatted',
+            'is_completed',
+            'client_name',
+            'created_at',
+            'updated_at',
+            'stage',      
+            'stage_display',   
         ]
         read_only_fields = ['created_at', 'updated_at']
+
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
