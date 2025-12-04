@@ -378,11 +378,11 @@ const ClientProfile = () => {
             </div>
             <div className="mt-2 md:mt-0">
               <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors mr-3">
-                Edit Profile
+                View Documents
               </button>
-              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                Export Data
-              </button>
+                <button className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
+                    View Tasks
+                </button>
             </div>
           </div>
         </div>
