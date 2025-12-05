@@ -94,7 +94,7 @@ class TaskSerializer(serializers.ModelSerializer):
             'stage',      
             'stage_display',   
         ]
-        read_only_fields = ['created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at', "profile"]
 
 
 class ProfileSerializer(serializers.ModelSerializer):

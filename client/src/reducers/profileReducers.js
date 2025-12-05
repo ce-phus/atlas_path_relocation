@@ -116,6 +116,32 @@ export const createTaskReducer = (state = initialState, action) => {
     }
 }
 
+export const updateTaskReducer = (state = initialState, action) => {
+    switch (action.type) {
+        case "TASK_UPDATE_REQUEST":
+            return { ...state, loading: true, error: null, success: false };
+        case "TASK_UPDATE_SUCCESS":
+            return { ...state, loading: false, success: true, error: null };
+        case "TASK_UPDATE_FAIL":
+            return { ...state, loading: false, error: action.payload, success: false };
+        default:
+            return state;
+    }
+}
+
+export const deleteTaskReducer = (state = initialState, action) => {
+    switch (action.type) {
+        case "TASK_DELETE_REQUEST":
+            return { ...state, loading: true, error: null, success: false };
+        case "TASK_DELETE_SUCCESS":
+            return { ...state, loading: false, success: true, error: null };
+        case "TASK_DELETE_FAIL":
+            return { ...state, loading: false, error: action.payload, success: false };
+        default:
+            return state;
+    }
+}
+
 export const getProfileReducer = (state = initialState, action) => {
     switch (action.type) {
         case "GET_PROFILE_REQUEST":

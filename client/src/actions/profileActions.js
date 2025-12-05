@@ -407,17 +407,20 @@ export const createTask = (taskData) => async (dispatch, getState) => {
 };
 
 
-export const updateTask = (taskData) => async (dispatch, getState) => {
+export const updateTask = (taskDataId, taskData) => async (dispatch, getState) => {
     try {
         dispatch({ type: "TASK_UPDATE_REQUEST" });
 
         const authHeaders = getAuthHeaders(getState);
+        console.log("Updating task with data:", taskData);
 
         const { data } = await axios.patch(
-            `${API_URL}/api/v1/profile/tasks/${taskData.id}/`,
+            `${API_URL}/api/v1/profile/tasks/${taskDataId}/`,
             taskData,
             authHeaders
         );
+
+        console.log("Task updated:", data);
 
         dispatch({
             type: "TASK_UPDATE_SUCCESS",
@@ -594,6 +597,38 @@ export const taskDueOverview = (filters = {}) => async (dispatch, getState) => {
         dispatch({
             type: "TASK_DUE_OVERVIEW_FAIL",
             payload: error.response?.data?.detail || error.message,
+        });
+    }
+};
+
+export const deleteTask = (taskId) => async (dispatch, getState) => {
+    try {
+        dispatch({ type: "TASK_DELETE_REQUEST" });
+
+        const authHeaders = getAuthHeaders(getState);
+
+        await axios.delete(
+            `${API_URL}/api/v1/profile/tasks/${taskId}/`,
+            authHeaders
+        );
+
+        console.log("Task deleted:", taskId);
+
+        dispatch({
+            type: "TASK_DELETE_SUCCESS",
+            payload: taskId,
+        });
+
+        dispatch(loadTasks());
+    } catch (error) {
+        console.error("Error deleting task:", error);
+
+        dispatch({
+            type: "TASK_DELETE_FAIL",
+            payload:
+                error.response && error.response.data.detail
+                    ? error.response.data.detail
+                    : error.message,
         });
     }
 };

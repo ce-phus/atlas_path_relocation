@@ -17,7 +17,9 @@ import {
     taskDueOverviewReducer,
     getConsultantProfileReducer,
     documentUpdateStatusReducer,
-    createTaskReducer
+    createTaskReducer,
+    updateTaskReducer,
+    deleteTaskReducer
 } from "./profileReducers"
 
 import {
@@ -49,6 +51,8 @@ const allReducers = combineReducers({
     getConsultantProfileReducer,
     documentUpdateStatusReducer,
     createTaskReducer,
+    updateTaskReducer,
+    deleteTaskReducer,
 
     progressReducer,
     budgetReducer,

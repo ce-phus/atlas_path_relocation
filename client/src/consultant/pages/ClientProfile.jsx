@@ -789,7 +789,7 @@ const ClientProfile = () => {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={toggleDocModal}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm cursor-pointer"
               >
                 View Documents
               </button>

@@ -2,23 +2,36 @@ import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
-import { FaTasks, FaPlus, FaCheck, FaEdit, FaTrash, FaCalendarAlt, FaFileAlt, FaTimes } from 'react-icons/fa'
+import { 
+  FaTasks, FaPlus, FaCheck, FaEdit, FaTrash, 
+  FaCalendarAlt, FaFileAlt, FaTimes 
+} from 'react-icons/fa'
 import { 
   loadTasks, 
   createTask, 
   markTaskComplete, 
-//   deleteTask 
+  updateTask,
+  deleteTask 
 } from '../../actions/profileActions'
 
 const TaskView = ({ profileId, clientName, onClose }) => {
   const dispatch = useDispatch()
   const { tasks, taskloading, taskerror } = useSelector((state) => state.profileReducer)
   const { loading: createLoading, success: createSuccess } = useSelector((state) => state.createTaskReducer)
+  const { loading: updateLoading, success: updateSuccess } = useSelector((state) => state.updateTaskReducer)
+  const { loading: deleteLoading, success: deleteSuccess } = useSelector((state) => state.deleteTaskReducer)
   
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
   const [filter, setFilter] = useState('all') 
   const [stageFilter, setStageFilter] = useState('all')
+  
+  // Toast state
+  const [toast, setToast] = useState({
+    show: false,
+    message: '',
+    type: 'success' // 'success' or 'error'
+  })
   
   // Form state
   const [taskData, setTaskData] = useState({
@@ -38,14 +51,30 @@ const TaskView = ({ profileId, clientName, onClose }) => {
     { value: 'final_relocation', label: 'Final Relocation' }
   ]
 
+  // Show toast function
+  const showToast = (message, type = 'success') => {
+    setToast({
+      show: true,
+      message,
+      type
+    })
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, show: false }))
+    }, 3000)
+  }
+
   useEffect(() => {
     if (profileId) {
       dispatch(loadTasks(profileId))
     }
   }, [dispatch, profileId])
 
+  // Handle create success
   useEffect(() => {
     if (createSuccess) {
+      showToast('Task created successfully!')
       setShowCreateForm(false)
       setTaskData({
         title: '',
@@ -58,6 +87,29 @@ const TaskView = ({ profileId, clientName, onClose }) => {
     }
   }, [createSuccess, profileId])
 
+  // Handle update success
+  useEffect(() => {
+    if (updateSuccess) {
+      showToast('Task updated successfully!')
+      setShowCreateForm(false)
+      setTaskData({
+        title: '',
+        description: '',
+        stage: 'initial_consultation',
+        due_date: '',
+        profile: profileId
+      })
+      setEditingTask(null)
+    }
+  }, [updateSuccess, profileId])
+
+  // Handle delete success
+  useEffect(() => {
+    if (deleteSuccess) {
+      showToast('Task deleted successfully!')
+    }
+  }, [deleteSuccess])
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setTaskData(prev => ({
@@ -69,9 +121,8 @@ const TaskView = ({ profileId, clientName, onClose }) => {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (editingTask) {
-      console.log('Update task:', editingTask.id, taskData)
+      dispatch(updateTask(editingTask.id, taskData))
     } else {
-      // Create new task
       dispatch(createTask(taskData))
     }
   }
@@ -79,6 +130,7 @@ const TaskView = ({ profileId, clientName, onClose }) => {
   const handleMarkComplete = (taskId) => {
     if (window.confirm('Mark this task as complete?')) {
       dispatch(markTaskComplete(taskId))
+      showToast('Task marked as complete!')
     }
   }
 
@@ -96,7 +148,7 @@ const TaskView = ({ profileId, clientName, onClose }) => {
 
   const handleDeleteTask = (taskId) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
-    //   dispatch(deleteTask(taskId))
+      dispatch(deleteTask(taskId))
     }
   }
 
@@ -171,6 +223,29 @@ const TaskView = ({ profileId, clientName, onClose }) => {
 
   return (
     <AnimatePresence>
+      {/* Success Toast */}
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-4 right-4 z-[100]"
+          >
+            <div className={`px-6 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${
+              toast.type === 'success' 
+                ? 'bg-green-50 border border-green-200 text-green-800' 
+                : 'bg-red-50 border border-red-200 text-red-800'
+            }`}>
+              <div className={`w-3 h-3 rounded-full ${
+                toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+              }`}></div>
+              <span className="font-medium">{toast.message}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -200,7 +275,7 @@ const TaskView = ({ profileId, clientName, onClose }) => {
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => setShowCreateForm(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                  className="px-4 py-2 cursor-pointer bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
                 >
                   <FaPlus size={14} />
                   <span>New Task</span>
@@ -329,7 +404,6 @@ const TaskView = ({ profileId, clientName, onClose }) => {
                     </div>
                   </div>
 
-                  {/* Tasks List */}
                   <div className="space-y-3">
                     {filteredTasks.map((task, index) => (
                       <motion.div
@@ -398,14 +472,14 @@ const TaskView = ({ profileId, clientName, onClose }) => {
                             )}
                             <button
                               onClick={() => handleEditTask(task)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                               title="Edit task"
                             >
                               <FaEdit size={16} />
                             </button>
                             <button
                               onClick={() => handleDeleteTask(task.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                               title="Delete task"
                             >
                               <FaTrash size={16} />
@@ -459,7 +533,6 @@ const TaskView = ({ profileId, clientName, onClose }) => {
         </motion.div>
       </motion.div>
 
-      {/* Create/Edit Task Modal */}
       <AnimatePresence>
         {showCreateForm && (
           <motion.div

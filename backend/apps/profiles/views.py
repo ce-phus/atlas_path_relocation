@@ -242,7 +242,7 @@ class TaskViewset(viewsets.ModelViewSet):
     lookup_field = 'id'
 
     def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
+        if self.action == "create":
             return TaskCreateSerializer
         return TaskSerializer
     
@@ -267,6 +267,21 @@ class TaskViewset(viewsets.ModelViewSet):
             raise ValidationError({"profile": "Profile not found."})
 
         serializer.save(profile=profile)
+
+    def delete(self, request, *args, **kwargs):
+        task = self.get_object()
+        user = request.user
+
+        if hasattr(user, 'consultant_profile'):
+            if task.profile.relocation_consultant != user.consultant_profile:
+                raise PermissionDenied("Not authorized to delete this task.")
+        elif hasattr(user, 'profile'):
+            if task.profile.user != user:
+                raise PermissionDenied("Not authorized to delete this task.")
+        elif not user.is_staff:
+            raise PermissionDenied("Not authorized to delete this task.")
+
+        return super().delete(request, *args, **kwargs)
 
     
     @action(detail=True, methods=["post"])
