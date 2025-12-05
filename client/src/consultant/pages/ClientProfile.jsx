@@ -74,7 +74,7 @@ const ClientProfile = () => {
     const today = new Date();
     
     if (isPast(dueDate) && !isToday(dueDate)) return 'overdue';
-    if (isToday(due_date)) return 'due-today';
+    if (isToday(dueDate)) return 'due-today';
     if (differenceInDays(dueDate, today) <= 3) return 'due-soon';
     return 'upcoming';
   };
