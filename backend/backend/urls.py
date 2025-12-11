@@ -6,5 +6,6 @@ urlpatterns = [
     path('api/v1/profile/', include('apps.profiles.urls')),
     path("api/v1/auth/", include("djoser.urls")),
     path("api/v1/auth/", include("djoser.urls.jwt")),
-    path("api/v1/budget/", include("apps.budget.urls"))
+    path("api/v1/budget/", include("apps.budget.urls")),
+    path("api/v1/chat/", include("apps.chat.urls")),
 ]

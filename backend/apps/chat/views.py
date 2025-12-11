@@ -187,17 +187,6 @@ class MessageViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
-    
-    def perform_create(self, serializer):
-        """Create a message with proper sender"""
-        converstaion_id = self.request.data.get('conversation')
-        conversation = get_object_or_404(
-            Conversation.objects.filter(
-                Q(user1=self.request.user) | Q(user2=self.request.user
-            ),
-            id=converstaion_id
-            )
-        )
 
     @action(detail=False, methods=['post'])
     def mark_as_read(self, request):
