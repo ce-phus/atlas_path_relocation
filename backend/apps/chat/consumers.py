@@ -110,7 +110,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             elif message_type == 'typing':
                 await self.handle_typing_indicator(data)
             elif message_type == 'read_receipt':
-                await self.handle_read_receipt(data)
+                await self.handle_read_receipts(data)
             elif message_type == 'delete_message':
                 await self.handle_delete_message(data)
             elif message_type == 'load_more':
@@ -465,7 +465,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     
     @database_sync_to_async
-    def get_recent_message(self):
+    def get_recent_messages(self):
         """Get recent messages with pagination"""
         messages = Message.objects.filter(
             conversation=self.conversation
@@ -653,6 +653,8 @@ class OnlineStatusConsumer(AsyncWebsocketConsumer):
             return
         
         self.user_group = f'status_{self.user.id}'
+
+        self.global_group = 'online_status'
         await self.channel_layer.group_add(
             self.user_group,
             self.channel_name

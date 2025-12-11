@@ -416,7 +416,6 @@ def conversation_stats(request):
         'online_conversations': online_conversations
     })
 
-# ADD TO views.py (after other views)
 class ChatListView(generics.ListAPIView):
     """
     GET /api/chat/list/
@@ -438,3 +437,17 @@ class ChatListView(generics.ListAPIView):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
+    
+class ChatProfileView(generics.RetrieveUpdateAPIView):
+    """
+    GET /api/chat/profile/
+    PUT /api/chat/profile/
+    Manage user's chat profile (online status, custom status).
+    """
+    serializer_class = UpdateChatProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        """Get or create the user's chat profile"""
+        profile, created = UserChatProfile.objects.get_or_create(user=self.request.user)
+        return profile
