@@ -5,6 +5,7 @@ import Profile from "./Profile";
 import Tasks from "./Tasks";
 import Documents from "./Documents";
 import Budget from "./Budget";
+import Chat from "./Chat";
 
 export {
     Home,
@@ -13,5 +14,6 @@ export {
     Profile,
     Tasks,
     Documents,
-    Budget
+    Budget,
+    Chat
 }

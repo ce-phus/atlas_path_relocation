@@ -12,6 +12,7 @@ import OverdueTasks from "./OverdueTasks";
 import ProfileAbout from "./ProfileAbout";
 import BudgetSection from "./BudgetSection";
 import ExpenseForm from "./ExpenseForm";
+import ChatLayout from "./ChatLayout";
 
 export {
     Layout,
@@ -27,5 +28,6 @@ export {
     OverdueTasks,
     ProfileAbout,
     BudgetSection,
-    ExpenseForm
+    ExpenseForm,
+    ChatLayout
 }

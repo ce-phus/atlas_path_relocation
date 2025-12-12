@@ -35,6 +35,14 @@ import {
     fetchConsultantStatsReducer
 } from "./consultantReducer"
 
+import {
+    chatListReducer,
+    startConversationReducer,
+    messagesReducer,
+    messageReadReducer,
+    chatProfileReducer,
+} from "./chatReducers";
+
 const allReducers = combineReducers({
     userLoginReducer,
     userRegisterReducer,
@@ -58,7 +66,13 @@ const allReducers = combineReducers({
     budgetReducer,
 
     fetchConsultantClientReducer,
-    fetchConsultantStatsReducer
+    fetchConsultantStatsReducer,
+
+    chatListReducer,
+    startConversationReducer,
+    messagesReducer,
+    messageReadReducer,
+    chatProfileReducer,
 });
 
 export default allReducers;

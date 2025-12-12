@@ -7,7 +7,7 @@ from django.utils.timezone import now
 from channels.layers import get_channel_layer
 from django.db.models import Q
 import logging
-from django.core.files import ContentFile
+from django.core.files.base import ContentFile
 import base64
 import uuid
 from typing import Optional, Dict, Any

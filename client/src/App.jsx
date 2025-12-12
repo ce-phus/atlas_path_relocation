@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Login, Register, Home, Profile, Tasks, Documents, Budget } from "./pages"
+import { Login, Register, Home, Profile, Tasks, Documents, Budget, Chat } from "./pages"
 import { Index, Cprofile, EditCprofile, ClientProfile } from './consultant/pages';
 import { logo } from './assets';
 
@@ -79,6 +79,7 @@ function App() {
             <Route path="/budget" element={<Budget />} />
           </>
         )}
+        <Route path="/chat" element={<Chat />} />
       </Routes>
     </Router>
   );

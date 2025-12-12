@@ -2,10 +2,10 @@ services:
   api:
     build:
       context: ./backend
-      dockerfile: ./docker/local/django/Dockerfile
+      dockerfile: docker/local/django/Dockerfile
     command: /start
     volumes:
-      - ./backend:/django_app
+      # Code is already copied into the image; only templates need live-reload
       - ./backend/templates:/django_app/templates
       - static_volume:/usr/share/nginx/html/staticfiles
       - media_volume:/usr/share/nginx/html/mediafiles
@@ -24,10 +24,9 @@ services:
   flower:
     build:
       context: ./backend
-      dockerfile: ./docker/local/django/Dockerfile
+      dockerfile: docker/local/django/Dockerfile
     command: /start-flower
     volumes:
-      - ./backend:/django_app
       - media_volume:/usr/share/nginx/html/mediafiles
     env_file:
       - ./backend/.env
@@ -57,7 +56,7 @@ services:
   client-dev:
     build:
       context: ./client
-      dockerfile: ./docker/local/Dockerfile
+      dockerfile: docker/local/Dockerfile
     command: npm run dev
     volumes:
       - ./client:/app
@@ -72,14 +71,13 @@ services:
 
   redis:
     image: redis:7.2.4
-
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
     networks:
       - atlaspath-network
     environment:
       - TZ=Africa/Nairobi
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -87,9 +85,12 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
-  
+
   nginx:
     restart: always
+    build:
+      context: ./backend/docker/local/nginx
+      dockerfile: Dockerfile
     depends_on:
       - api
       - flower
@@ -97,23 +98,21 @@ services:
       - static_volume:/usr/share/nginx/html/staticfiles
       - media_volume:/usr/share/nginx/html/mediafiles
       - ./client/dist:/usr/share/nginx/html
-    build:
-      context: ./backend/docker/local/nginx
-      dockerfile: Dockerfile
     ports:
-      - 8080:8080
+      - "8080:8080"
     networks:
       - atlaspath-network
     environment:
       - TZ=Africa/Nairobi
+
   celery_worker:
     build:
       context: ./backend
-      dockerfile: ./docker/local/django/Dockerfile
+      dockerfile: docker/local/django/Dockerfile
     command: /start-celeryworker
     volumes:
       - ./backend:/django_app
-      - media_volume:/usr/share/nginx/html/mediafiles 
+      - media_volume:/usr/share/nginx/html/mediafiles
     env_file:
       - ./backend/.env
     depends_on:
@@ -123,7 +122,6 @@ services:
       - atlaspath-network
     environment:
       - TZ=Africa/Nairobi
-
 
 networks:
   atlaspath-network:

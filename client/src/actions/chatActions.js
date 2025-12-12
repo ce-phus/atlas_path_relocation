@@ -1,5 +1,7 @@
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL 
+
 export const fetchChats = () => async (dispatch, getState) => {
     try {
         dispatch({ type: "CHAT_LIST_REQUEST" });
@@ -12,7 +14,7 @@ export const fetchChats = () => async (dispatch, getState) => {
             },
         };
 
-        const { data } = await axios.get("/api/v1/chat/list", config);
+        const { data } = await axios.get(`${API_URL}/api/v1/chat/list`, config);
 
         dispatch({ type: "CHAT_LIST_SUCCESS", payload: data });
     } catch (error) {
@@ -37,7 +39,7 @@ export const startConversation = (username) => async (dispatch, getState) => {
         };
 
         const { data } = await axios.post(
-            "/api/v1/chat/conversations/start/",
+            `${API_URL}/api/v1/chat/conversations/start/`,
             { username },
             config
         );
@@ -65,7 +67,7 @@ export const fetchMessages = (conversationId, page = 1) => async (dispatch, getS
         };
 
         const { data } = await axios.post(
-            `/api/v1/chat/conversations/${conversationId}/messages/?page=${page}`,
+            `${API_URL}/api/v1/chat/conversations/${conversationId}/messages/?page=${page}`,
             {},
             config
         );
@@ -95,7 +97,7 @@ export const markMessagesRead = (messageIds) => async (dispatch, getState) => {
         };
 
         const { data } = await axios.post(
-            "/api/v1/chat/messages/mark_as_read/",
+            `${API_URL}/api/v1/chat/messages/mark_as_read/`,
             { message_ids: messageIds },
             config
         );
@@ -116,7 +118,7 @@ export const getChatProfile = () => async (dispatch, getState) => {
 
         const { userLoginReducer: { userInfo } } = getState();
 
-        const { data } = await axios.get("/api/v1/chat/chat/profile/", {
+        const { data } = await axios.get(`${API_URL}/api/v1/chat/profile/`, {
             headers: { Authorization: `Bearer ${userInfo.access}` },
         });
 
@@ -137,7 +139,7 @@ export const updateChatProfile = (payload) => async (dispatch, getState) => {
         const { userLoginReducer: { userInfo } } = getState();
 
         const { data } = await axios.put(
-            "/api/v1/chat/chat/profile/",
+            `${API_URL}/api/v1/chat/profile/`,
             payload,
             {
                 headers: {

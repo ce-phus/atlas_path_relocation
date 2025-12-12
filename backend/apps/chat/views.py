@@ -440,3 +440,47 @@ class ChatProfileView(generics.RetrieveUpdateAPIView):
         """Get or create the user's chat profile"""
         profile, created = UserChatProfile.objects.get_or_create(user=self.request.user)
         return profile
+
+class UserSearchView(generics.ListAPIView):
+    """
+    Search users by username, email, or name.
+    """
+    serializer_class = LightUserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        search_term = self.request.query_params.get('q', '').strip()
+        
+        if not search_term:
+            return User.objects.none()
+        
+        # Search in username, email, first name, last name
+        queryset = User.objects.filter(
+            Q(username__icontains=search_term) |
+            Q(email__icontains=search_term) |
+            Q(first_name__icontains=search_term) |
+            Q(last_name__icontains=search_term)
+        ).exclude(id=user.id)  # Exclude current user
+        
+        return queryset.select_related('chat_profile').order_by('username')
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
+from django.http import JsonResponse
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def test_search_endpoint(request):
+    """Test endpoint to verify URL routing"""
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Test endpoint is working',
+        'user': request.user.username,
+        'query': request.GET.get('q', 'no query provided')
+    })
