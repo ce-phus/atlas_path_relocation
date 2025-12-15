@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react'
 import { ChatSidebar, ChatWindow, OnlineStatus, UserSearchModal } from './general'
 import { fetchChats, getChatProfile } from "../actions/chatActions"
 import { useDispatch, useSelector } from "react-redux"
+import chatWebsocket from '../websockets/ChatWebsocket'
 
 const ChatLayout = () => {
   const dispatch = useDispatch();
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [chatsUpdated, setChatsUpdated] = useState(0)
+
+  const { userInfo } = useSelector((state) => state.userLoginReducer);
+  console.log("UserInfo access: ", userInfo.access)
 
   useEffect(() => {
     dispatch(fetchChats());
@@ -32,6 +36,27 @@ const ChatLayout = () => {
     // Also trigger a manual fetch to ensure we have latest data
     dispatch(fetchChats());
   };
+
+  useEffect(() => {
+    if (!userInfo?.access) return;
+  
+    const callbacks = {
+      onChatListUpdate: (update) => {
+        console.log("Chat list update received:", update);
+        setChatsUpdated(prev => prev + 1);
+      }
+    };
+  
+    chatWebsocket.connectToChatList({
+      callbacks,
+      accessToken: userInfo.access,
+    });
+  
+    return () => {
+      chatWebsocket.disconnect();
+    };
+  }, [userInfo?.access]);
+  
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-[#f9fafb] to-white font-light'>

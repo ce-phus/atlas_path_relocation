@@ -32,6 +32,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """Handle WebSocket connection."""
         self.user = self.scope["user"]
+
+        if not self.user or self.user.is_anonymous:
+            await self.close(code=4001)
+            return
+
         if not self.user.is_authenticated:
             await self.close(code=4003)
             return
@@ -591,19 +596,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'created_at': message.created_at.isoformat()
         }
 
+# consumers.py - Update ChatListConsumer.connect()
 class ChatListConsumer(AsyncWebsocketConsumer):
-    """
-    WebSocket for real-time chat list updates.
-    Handles the 'chat goes to top' feature.
-    """
-    
     async def connect(self):
         """Connect user to chat list updates"""
+        
         self.user = self.scope['user']
+
+        if not self.user or self.user.is_anonymous:
+            print(f"CHATLIST CONSUMER: No user or anonymous user")
+            await self.close(code=4001)
+            return
         
         if not self.user.is_authenticated:
+            print(f"CHATLIST CONSUMER: User not authenticated")
             await self.close(code=4003)
             return
+        
+        print(f"CHATLIST CONSUMER: User authenticated = {self.user.username} (ID: {self.user.id})")
         
         # Each user has their own chat list group
         self.group_name = f'user_{self.user.id}_chatlist'
@@ -615,7 +625,7 @@ class ChatListConsumer(AsyncWebsocketConsumer):
         
         await self.accept()
         
-        logger.info(f"User {self.user.username} connected to chat list updates")
+        print(f"✅ CHATLIST CONSUMER: Connection accepted for user {self.user.username}")
 
     async def disconnect(self, close_code):
         """Disconnect from chat list updates"""

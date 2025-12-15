@@ -38,7 +38,8 @@ const UserSearchModal = ({ isOpen, onClose, onNewConversationStarted }) => {
       if (!response.ok) throw new Error('Search failed');
 
       const data = await response.json();
-      setSearchResults(data.results || data);
+      setSearchResults(data);
+      console.log('Search results:', data);
     } catch (err) {
       console.error('Search error:', err);
       setError('Failed to search users');
@@ -81,11 +82,11 @@ const UserSearchModal = ({ isOpen, onClose, onNewConversationStarted }) => {
     setError('');
 
     try {
-      const result = await dispatch(startConversation(selectedUser.username));
+      const conversation = await dispatch(startConversation(selectedUser.username));
+      console.log("Started conversation:", conversation);
 
-      if (onNewConversationStarted) {
-        onNewConversationStarted(result.payload);
-      }
+      onNewConversationStarted(conversation);
+
 
       // Reset everything
       setSearchQuery('');

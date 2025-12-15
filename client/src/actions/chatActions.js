@@ -45,6 +45,7 @@ export const startConversation = (username) => async (dispatch, getState) => {
         );
 
         dispatch({ type: "START_CONVERSATION_SUCCESS", payload: data });
+        return data;
 
     } catch (error) {
         dispatch({
