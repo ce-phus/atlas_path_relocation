@@ -2,17 +2,50 @@ import React, { useEffect, useState } from 'react'
 import { fetchChats } from '../../actions/chatActions'
 import { useSelector, useDispatch } from 'react-redux'
 import ChatListItem from './ChatListItem'
+import chatWebsocket from "../../websockets/ChatWebsocket"
 
 const ChatSidebar = ({ onSelectConversation, onStartNewChat, selectedConversationId }) => {
   const dispatch = useDispatch();
 
   const { chats, loading, error } = useSelector((state) => state.chatListReducer);
   const [searchTerm, setSearchTerm] = useState('');
+  const [forceRefresh, setForceRefresh] = useState(0);
 
   const filteredChats = chats?.filter(chat => 
     chat.other_user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     chat.last_message?.text?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // useEffect(() => {
+  //   dispatch(fetchChats());
+    
+  //   const interval = setInterval(() => {
+  //     dispatch(fetchChats());
+  //   }, 30000);
+
+  //   return () => clearInterval(interval);
+  // }, [dispatch, forceRefresh]);
+
+  useEffect(() => {
+    const callbacks = {
+      onChatListUpdate: (update) => {
+        console.log('Sidebar received chat list update:', update);
+        // Force refresh when new conversation is created
+        if (update.action === 'new_conversation' || update.action === 'new_message') {
+          setForceRefresh(prev => prev + 1);
+          dispatch(fetchChats()); // Immediate refresh
+        }
+      }
+    };
+
+    chatWebsocket.connectToChatList(callbacks);
+
+    return () => {
+      if (chatWebsocket.chatListSocket) {
+        chatWebsocket.chatListSocket.close();
+      }
+    };
+  }, [dispatch]);
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-[#f0f0f0] h-[calc(100vh-12rem)] flex flex-col">
       {/* Header */}
