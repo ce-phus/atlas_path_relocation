@@ -11,6 +11,8 @@ const ChatSidebar = ({ onSelectConversation, onStartNewChat, selectedConversatio
   const [searchTerm, setSearchTerm] = useState('');
   const [forceRefresh, setForceRefresh] = useState(0);
 
+  const { userInfo } = useSelector(state => state.userLoginReducer);
+
   const filteredChats = chats?.filter(chat => 
     chat.other_user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     chat.last_message?.text?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -27,25 +29,28 @@ const ChatSidebar = ({ onSelectConversation, onStartNewChat, selectedConversatio
   // }, [dispatch, forceRefresh]);
 
   useEffect(() => {
+    if (!userInfo?.access) return;
+  
     const callbacks = {
+      onConnect: () => console.log('✅ Chat list WebSocket connected'),
       onChatListUpdate: (update) => {
-        console.log('Sidebar received chat list update:', update);
-        // Force refresh when new conversation is created
-        if (update.action === 'new_conversation' || update.action === 'new_message') {
-          setForceRefresh(prev => prev + 1);
-          dispatch(fetchChats()); // Immediate refresh
-        }
-      }
+        console.log('📨 Chat list update:', update);
+        setChatsUpdated(prev => prev + 1);
+      },
+      onError: (error) => console.error('❌ Chat list WebSocket error:', error),
+      onDisconnect: (event) => console.log('🔌 Chat list WebSocket disconnected:', event?.code, event?.reason)
     };
-
-    chatWebsocket.connectToChatList(callbacks);
-
+  
+    // Make sure callbacks is defined
+    chatWebsocket.connectToChatList({
+      callbacks, // This must be included
+      accessToken: userInfo.access,
+    });
+  
     return () => {
-      if (chatWebsocket.chatListSocket) {
-        chatWebsocket.chatListSocket.close();
-      }
+      chatWebsocket.disconnectChatList();
     };
-  }, [dispatch]);
+  }, [userInfo?.access]);
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-[#f0f0f0] h-[calc(100vh-12rem)] flex flex-col">
       {/* Header */}

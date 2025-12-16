@@ -3,7 +3,7 @@ from rest_framework import viewsets, generics, status, permissions, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -36,6 +36,8 @@ class ConversationViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.OrderingFilter]
     ordering = ['-updated_at']
     ordering_fields = ['updated_at', 'created_at']
+    lookup_field = "id"
+    lookup_url_kwarg = "id"
 
     def get_queryset(self):
         """Get conversations for the authenticated/current user"""
@@ -92,11 +94,11 @@ class ConversationViewSet(viewsets.ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    @action(detail=True, methods=['post'], url_path='messages', url_name='messages')
-    def message(self,request, pk=None):
+    @action(detail=True, methods=['get'], url_path='messages', url_name='messages')
+    def messages(self,request, id=None):
         """
         Get messages for a conversation with pagination.
-        GET /api/conversation/{id}/messages/
+        GET /api/v1/conversations/{id}/messages/
         """
 
         conversation = self.get_object()
@@ -169,7 +171,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     """
     serializer_class = MessageSerializer
     permission_classes = [permissions.IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     pagination_class = StandardPagination
 
     def get_queryset(self):
@@ -188,6 +190,7 @@ class MessageViewSet(viewsets.ModelViewSet):
         context['request'] = self.request
         return context
 
+    # views.py - Update the MessageViewSet.mark_as_read method
     @action(detail=False, methods=['post'])
     def mark_as_read(self, request):
         """
@@ -199,13 +202,21 @@ class MessageViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             message_ids = serializer.validated_data['message_ids']
             
-            # Update messages where user is receiver
-            updated = Message.objects.filter(
+            # Get messages that belong to the user's conversations
+            # and are not sent by the user
+            messages = Message.objects.filter(
                 id__in=message_ids,
-                receiver=request.user,
-                status__in=['sent', 'delivered']
+                conversation__in=Conversation.objects.filter(
+                    Q(user1=request.user) | Q(user2=request.user)
+                )
             ).exclude(
+                sender=request.user,  # Don't mark own messages as read
                 deleted_for=request.user
+            )
+            
+            # Update status for messages that are sent or delivered
+            updated = messages.filter(
+                status__in=['sent', 'delivered']
             ).update(status='read', updated_at=timezone.now())
             
             return Response({
@@ -227,13 +238,21 @@ class MessageViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             message_ids = serializer.validated_data['message_ids']
             
-            # Update messages where user is receiver
-            updated = Message.objects.filter(
+            # Get messages that belong to the user's conversations
+            # and are not sent by the user
+            messages = Message.objects.filter(
                 id__in=message_ids,
-                receiver=request.user,
-                status='sent'
+                conversation__in=Conversation.objects.filter(
+                    Q(user1=request.user) | Q(user2=request.user)
+                )
             ).exclude(
+                sender=request.user,  # Don't mark own messages as delivered
                 deleted_for=request.user
+            )
+            
+            # Update status for messages that are sent
+            updated = messages.filter(
+                status='sent'
             ).update(status='delivered', updated_at=timezone.now())
             
             return Response({

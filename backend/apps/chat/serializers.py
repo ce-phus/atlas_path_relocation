@@ -53,9 +53,8 @@ class MessageSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at', 'sender', 'receiver']
     
     def get_receiver(self, obj):
-        """Get receiver information"""
-        receiver = obj.receiver
-        return LightUserSerializer(receiver).data if receiver else None
+        """Get receiver information using the model property"""
+        return LightUserSerializer(obj.receiver).data  
     
     def get_time_since(self, obj):
         """Get human-readable time since creation"""

@@ -60,6 +60,7 @@ export const fetchMessages = (conversationId, page = 1) => async (dispatch, getS
         dispatch({ type: "MESSAGES_REQUEST" });
 
         const { userLoginReducer: { userInfo } } = getState();
+        console.log("UserInfo access: ", userInfo.access)
 
         const config = {
             headers: {
@@ -67,9 +68,8 @@ export const fetchMessages = (conversationId, page = 1) => async (dispatch, getS
             },
         };
 
-        const { data } = await axios.post(
+        const { data } = await axios.get(
             `${API_URL}/api/v1/chat/conversations/${conversationId}/messages/?page=${page}`,
-            {},
             config
         );
 

@@ -515,17 +515,27 @@ class ChatConsumer(AsyncWebsocketConsumer):
             for msg in messages
         ]
         
-
     @database_sync_to_async
     def mark_messages_as_read(self, message_ids):
         """Mark messages as read"""
-        updated_count = Message.objects.filter(
-            id__in=message_ids,
-            conversation=self.conversation,
-            receiver=self.user,
-            status__in=['sent', 'delivered']
-        ).update(status='read')
-        return updated_count
+        try:
+            # Get all messages for this conversation that are not from the current user
+            messages = Message.objects.filter(
+                id__in=message_ids,
+                conversation=self.conversation
+            ).exclude(
+                sender=self.user  # Exclude messages sent by current user
+            )
+            
+            # Update status for messages that are sent or delivered
+            updated_count = messages.filter(
+                status__in=['sent', 'delivered']
+            ).update(status='read')
+            
+            return updated_count
+        except Exception as e:
+            logger.error(f"Error marking messages as read: {e}")
+            return 0
     
     @database_sync_to_async
     def delete_message(self, message_id, delete_for_everyone=False):
@@ -595,6 +605,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'conversation_id': str(message.conversation.id),
             'created_at': message.created_at.isoformat()
         }
+    
+    @database_sync_to_async
+    def mark_message_delivered(self, message_id):
+        """Mark message as delivered"""
+        Message.objects.filter(
+            id=message_id,
+            conversation=self.conversation
+        ).update(status='delivered')
 
 # consumers.py - Update ChatListConsumer.connect()
 class ChatListConsumer(AsyncWebsocketConsumer):

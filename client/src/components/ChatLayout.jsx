@@ -11,7 +11,6 @@ const ChatLayout = () => {
   const [chatsUpdated, setChatsUpdated] = useState(0)
 
   const { userInfo } = useSelector((state) => state.userLoginReducer);
-  console.log("UserInfo access: ", userInfo.access)
 
   useEffect(() => {
     dispatch(fetchChats());
@@ -28,41 +27,62 @@ const ChatLayout = () => {
 
   const handleNewConversationStarted = (newConversation) => {
     console.log('New conversation started:', newConversation);
-    
     setSelectedConversation(newConversation);
-
     setChatsUpdated(prev => prev + 1);
-    
-    // Also trigger a manual fetch to ensure we have latest data
     dispatch(fetchChats());
   };
 
+  // WebSocket for chat list updates
   useEffect(() => {
-    if (!userInfo?.access) return;
+    if (!userInfo?.access) {
+      console.log('❌ No access token available for WebSocket');
+      return;
+    }
   
     const callbacks = {
+      onConnect: () => {
+        console.log('✅ Chat list WebSocket connected');
+      },
       onChatListUpdate: (update) => {
-        console.log("Chat list update received:", update);
+        console.log('📨 Chat list update received:', update);
+        // Trigger a refresh of chat list
         setChatsUpdated(prev => prev + 1);
+        
+        // If this update is for the currently selected conversation, update it
+        if (selectedConversation && update.conversation_id === selectedConversation.id) {
+          // Update the selected conversation with new message info
+          setSelectedConversation(prev => ({
+            ...prev,
+            last_message: update.last_message,
+            updated_at: update.updated_at
+          }));
+        }
+      },
+      onError: (error) => {
+        console.error('❌ Chat list WebSocket error:', error);
+      },
+      onDisconnect: (event) => {
+        console.log('🔌 Chat list WebSocket disconnected:', event?.code, event?.reason);
       }
     };
   
+    console.log('🔌 Connecting to chat list WebSocket...');
     chatWebsocket.connectToChatList({
       callbacks,
       accessToken: userInfo.access,
     });
   
     return () => {
-      chatWebsocket.disconnect();
+      console.log('🧹 Cleaning up chat list WebSocket');
+      chatWebsocket.disconnectChatList();
     };
-  }, [userInfo?.access]);
-  
+  }, [userInfo?.access, selectedConversation?.id]);
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-[#f9fafb] to-white font-light'>
       <header className="bg-white border-b border-[#f0f0f0] shadow-sm">
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='flex justify-between  items-center py-4'>
+          <div className='flex justify-between items-center py-4'>
             <div className='flex items-center space-x-3'>
               <div className="w-10 h-10 bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">C</span>
@@ -86,14 +106,13 @@ const ChatLayout = () => {
               key={chatsUpdated}
             />
           </div>
-          {/* Main Char Area */}
-          <div
-          className='lg:col-span-3'
-          >
+          
+          {/* Main Chat Area */}
+          <div className='lg:col-span-3'>
             {selectedConversation ? (
               <ChatWindow 
-              conversation={selectedConversation} 
-              key={selectedConversation.id}
+                conversation={selectedConversation} 
+                key={selectedConversation.id}
               />
             ) : (
               <div className="h-[calc(100vh-12rem)] flex flex-col items-center justify-center bg-white rounded-2xl shadow-lg border border-[#f0f0f0]">
@@ -118,6 +137,7 @@ const ChatLayout = () => {
           </div>
         </div>
       </div>
+      
       <UserSearchModal 
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
