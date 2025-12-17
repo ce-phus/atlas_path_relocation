@@ -221,7 +221,7 @@ class ChatWebSocket {
         switch(data.type) {
             case 'message':
                 if (this.chatCallbacks.onMessage) {
-                    this.chatCallbacks.onMessage(data.message || data); // Handle both formats
+                    this.chatCallbacks.onMessage(data); // ← pass the whole data object, not just data.message
                 }
                 break;
             case 'typing':

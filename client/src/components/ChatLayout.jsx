@@ -3,6 +3,7 @@ import { ChatSidebar, ChatWindow, OnlineStatus, UserSearchModal } from './genera
 import { fetchChats, getChatProfile } from "../actions/chatActions"
 import { useDispatch, useSelector } from "react-redux"
 import chatWebsocket from '../websockets/ChatWebsocket'
+import { getProfile } from '../actions/profileActions'
 
 const ChatLayout = () => {
   const dispatch = useDispatch();
@@ -12,10 +13,11 @@ const ChatLayout = () => {
 
   const { userInfo } = useSelector((state) => state.userLoginReducer);
 
-  useEffect(() => {
-    dispatch(fetchChats());
-    dispatch(getChatProfile());
-  }, [dispatch, chatsUpdated]);
+
+useEffect(() => {
+  dispatch(fetchChats());
+  dispatch(getChatProfile());
+}, [dispatch, chatsUpdated]);
 
   const handleSelectConversation = (conversation) => {
     setSelectedConversation(conversation);

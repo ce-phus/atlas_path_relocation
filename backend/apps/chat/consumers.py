@@ -129,42 +129,30 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             logger.error(f"Error processing message: {e}")
 
-    async def handle_new_message(self, data: Dict[str, Any]):
-        """Handle new text or image message"""
-        text_content = data.get('text', '').strip()
-        image_data = data.get('image', None)
-        temp_id = data.get('temp_id')  # For frontend optimistic updates
-
-        if not text_content and not image_data:
-            await self.send_error("Message content is required")
-            return
+    async def handle_new_message(self, data):
+        message = await self.create_message(text=data.get('text'), temp_id=data.get('temp_id'))
         
-        # Create message in database
-        message = await self.create_message(
-            text=text_content,
-            image_data=image_data,
-            temp_id=temp_id
+        serialized = await self.serialize_message(message)
+        
+        # Send to sender (with temp_id for optimistic replacement)
+        await self.send(text_data=json.dumps({
+            'type': 'message',
+            'message': serialized,
+            'temp_id': data.get('temp_id')
+        }))
+        
+        # Send to receiver (no temp_id)
+        receiver_channel = None
+        # Find receiver's channel if online — or use group
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'chat_message',
+                'message': serialized
+            }
         )
-        
-        # IMPORTANT: Update conversation timestamp
-        await self.update_conversation_timestamp()
 
-        # Send confirmation to sender immediately
-        await self.send_message_to_sender(message, temp_id)
-
-        # Check if receiver is online
-        receiver_online = await self.is_user_online(self.other_user)
-        
-        if receiver_online:
-            # Update status to delivered
-            await self.mark_message_delivered(message.id)
-            
-            # Send to receiver
-            await self.send_message_to_receiver(message)
-        else:
-            logger.info(f"User {self.other_user.username} is offline. Message queued.")
-
-        # CRITICAL: Notify chat lists to reorder
+         # CRITICAL: Notify chat lists to reorder
         await self.notify_chat_lists_update(message)
 
         # Send push notification if needed
@@ -242,16 +230,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'has_more': len(messages) == self.page_size
         }))
 
-    async def handle_update_message(self, data:Dict[str, Any]):
-        """Handle message updates (editing)"""
-        message_id = data.get('message_id', None)
+    async def handle_update_message(self, data: Dict[str, Any]):
+        message_id = data.get('message_id')
         new_text = data.get('new_text', '').strip()
 
         if not message_id or not new_text:
-            await self.send_error("Message ID and new text are required for updating")
+            await self.send_error("Invalid update payload")
             return
-        
-        updated = await self.update_message(message_id, new_text)
+
+        updated = await self.update_message_text(message_id, new_text)
 
         if updated:
             await self.channel_layer.group_send(
@@ -260,17 +247,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'type': 'message_updated',
                     'message_id': message_id,
                     'new_text': new_text,
-                    'timestamp': now().isoformat(),
-                    'updated_by': str(self.user.id)
+                    'updated_by': str(self.user.id),
+                    'timestamp': now().isoformat()
                 }
             )
 
+
     async def chat_message(self, event):
-        """Handle incoming chat message from group"""
         await self.send(text_data=json.dumps({
             'type': 'message',
-            'message': event['message']
+            'message': event['message'],
+            'temp_id': event.get('temp_id')
         }))
+
 
     async def typing_indicator(self, event):
         """Handle typing indicator from group"""
@@ -403,12 +392,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     async def send_message_to_receiver(self, message: Message):
-        """Send message to receiver"""
+        """Send message to receiver only (not to sender)"""
+        serialized_message = await self.serialize_message(message)
+        
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type': 'chat_message',
-                'message': await self.serialize_message(message)
+                'message': serialized_message,
+                'is_for_receiver': True
             }
         )
 
@@ -493,16 +485,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_messages_before(self, before_id):
-        """Get messages before a specific message ID"""
-        messages = Message.objects.filter(
-            conversation=self.conversation,
-            created_at__lt=Message.objects.get(id=before_id).created_at
-        ).exclude(
-            deleted_for=self.user
-        ).select_related(
-            'sender'
-        ).order_by('-created_at')[:self.page_size]
-        
+        try:
+            before_message = Message.objects.get(id=before_id)
+        except Message.DoesNotExist:
+            return []
+
+        messages = (
+            Message.objects
+            .filter(conversation=self.conversation, created_at__lt=before_message.created_at)
+            .exclude(deleted_for=self.user)
+            .select_related('sender')
+            .order_by('-created_at')[:self.page_size]
+        )
+
         return [
             {
                 'id': str(msg.id),
@@ -512,8 +507,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'status': msg.status,
                 'created_at': msg.created_at.isoformat()
             }
-            for msg in messages
+            for msg in reversed(messages)
         ]
+
         
     @database_sync_to_async
     def mark_messages_as_read(self, message_ids):
@@ -583,10 +579,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def serialize_message(self, message):
         """Serialize message for WebSocket"""
+        # Get the receiver from conversation
+        conversation = message.conversation
+        receiver = conversation.user2 if conversation.user1 == message.sender else conversation.user1
+        
         return {
             'id': str(message.id),
             'conversation_id': str(message.conversation.id),
-            'sender_id': str(message.sender.id),
+            'sender': {  # IMPORTANT: Include full sender object
+                'id': str(message.sender.id),
+                'username': message.sender.username,
+                'first_name': message.sender.first_name or '',
+                'last_name': message.sender.last_name or ''
+            },
+            'receiver_id': str(receiver.id),
             'text': message.text,
             'image': message.image.url if message.image else None,
             'status': message.status,

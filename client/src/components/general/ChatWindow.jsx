@@ -1,182 +1,300 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { fetchMessages, markMessagesRead } from '../../actions/chatActions'
 import ChatInput from './ChatInput'
 import ChatMessage from './ChatMessage'
 import chatWebsocket from '../../websockets/ChatWebsocket'
+import { getProfile } from '../../actions/profileActions'
 
 const ChatWindow = ({ conversation }) => {
-  const dispatch = useDispatch();
-  const messagesEndRef = useRef(null);
-  const messageContainerRef = useRef(null);
+  const dispatch = useDispatch()
+  const messagesEndRef = useRef(null)
+  const messageContainerRef = useRef(null)
+  const prevScrollHeightRef = useRef(0)
 
-  const { messages, loading } = useSelector(state => state.messagesReducer);
-  const { userInfo } = useSelector(state => state.userLoginReducer);
+  const { messages, loading } = useSelector(state => state.messagesReducer)
+  const { userInfo } = useSelector(state => state.userLoginReducer)
+  const { profile, loading: profileLoading } = useSelector(state => state.getProfileReducer)
+  console.log("Profile: ", profile)
 
-  const [liveMessages, setLiveMessages] = useState([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [connectionStatus, setConnectionStatus] = useState('disconnected');
+  const [liveMessages, setLiveMessages] = useState([])
+  const [isTyping, setIsTyping] = useState(false)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [connectionStatus, setConnectionStatus] = useState('disconnected')
 
-  // Fetch messages when conversation changes
+
+  /* ---------------------------
+     Fetch REST messages
+  ----------------------------*/
   useEffect(() => {
-    if (conversation?.id) {
-      dispatch(fetchMessages(conversation.id, 1));
-      setPage(1);
-      setLiveMessages([]);
-    }
-  }, [conversation?.id, dispatch]);
+    if (!conversation?.id) return
 
-  // Connect to chat WebSocket
+    console.log('🔄 Fetching messages for conversation:', conversation.id)
+    dispatch(fetchMessages(conversation.id, 1))
+    setPage(1)
+    setHasMore(true)
+    setLiveMessages([])
+  }, [conversation?.id, dispatch])
+
+  /* ---------------------------
+     WebSocket Connection
+     NOTE: Now depends on profile being loaded
+  ----------------------------*/
   useEffect(() => {
-    if (!conversation?.other_user?.username || !userInfo?.access) {
-      console.log('❌ Missing username or access token for WebSocket');
-      return;
+    // Don't connect until we have both profile and user info
+    if (!conversation?.other_user?.username || !userInfo?.access || !profile) {
+      console.log('⏳ Waiting for profile/user info:', {
+        hasConversation: !!conversation?.other_user?.username,
+        hasAccessToken: !!userInfo?.access,
+        hasProfile: !!profile
+      })
+      return
     }
 
-    const accessToken = userInfo.access;
-    
+    console.log('🔌 Connecting to chat WebSocket for user:', conversation.other_user.username)
+
     const callbacks = {
       onConnect: () => {
-        console.log('✅ Chat WebSocket connected');
-        setConnectionStatus('connected');
+        console.log('✅ Chat WebSocket connected')
+        setConnectionStatus('connected')
       },
-      onMessage: (message) => {
-        console.log('📨 New message received:', message);
-        // Handle different message formats
-        const formattedMessage = typeof message === 'object' ? message : { 
-          id: Date.now().toString(), 
-          text: message,
-          sender: conversation.other_user,
-          created_at: new Date().toISOString(),
-          status: 'delivered'
-        };
-        
-        setLiveMessages(prev => [...prev, formattedMessage]);
-        scrollToBottom();
-      },
-      onTyping: ({ isTyping, userId }) => {
-        console.log('⌨️ Typing indicator:', isTyping, 'from user:', userId);
-        setIsTyping(isTyping);
-      },
-      onReadReceipt: ({ messageIds, readerId }) => {
-        console.log('✓ Read receipt for messages:', messageIds, 'by user:', readerId);
-        // Update message status in live messages
-        setLiveMessages(prev => prev.map(msg => 
-          messageIds.includes(msg.id) ? { ...msg, status: 'read' } : msg
-        ));
-      },
-      onRecentMessages: (recentMessages) => {
-        console.log('📦 Recent messages from WebSocket:', recentMessages);
-        if (recentMessages && recentMessages.length > 0) {
-          setLiveMessages(recentMessages);
-        }
-      },
-      onError: (error) => {
-        console.error('❌ Chat WebSocket error:', error);
-        setConnectionStatus('error');
-      },
-      onDisconnect: (event) => {
-        console.log('🔌 Chat WebSocket disconnected:', event?.code, event?.reason);
-        setConnectionStatus('disconnected');
-      }
-    };
 
-    console.log('🔌 Connecting to chat with user:', conversation.other_user.username);
-    chatWebsocket.connectToChat(conversation.other_user.username, { 
-      callbacks, 
-      accessToken 
-    });
+      onMessage: incoming => {
+        const message = incoming.message || incoming;
+        const tempId = incoming.temp_id || incoming.temp_id;
+      
+        if (!message?.id) return;
+      
+        setLiveMessages(prev => {
+          // Only handle optimistic replacement
+          if (tempId) {
+            return prev.map(m => 
+              m.id === tempId ? { ...message, is_temp: false } : m
+            );
+          }
+      
+          return [...prev, message];
+        });
+      },
+      
+      // onRecentMessages: recentMessages => {
+      //   console.log('📦 Recent messages from WebSocket:', recentMessages)
+      //   setLiveMessages(recentMessages || [])
+      // },
+
+      onDisconnect: () => {
+        console.log('🔌 Chat WebSocket disconnected')
+        setConnectionStatus('disconnected')
+      },
+      
+      onError: (error) => {
+        console.error('❌ Chat WebSocket error:', error)
+        setConnectionStatus('error')
+      }
+    }
+
+    chatWebsocket.connectToChat(conversation.other_user.username, {
+      callbacks,
+      accessToken: userInfo.access,
+    })
 
     return () => {
-      console.log('🧹 Cleaning up chat WebSocket');
-      chatWebsocket.disconnectChat();
-      setIsTyping(false);
-      setConnectionStatus('disconnected');
-    };
-  }, [conversation?.other_user?.username, userInfo?.access]);
-
-  // Mark messages as read when viewing
-  useEffect(() => {
-    const unreadLiveMessages = liveMessages.filter(
-      msg => msg.status === 'delivered' || msg.status === 'sent'
-    );
-    const unreadApiMessages = messages?.results?.filter(
-      msg => msg.status === 'delivered' || msg.status === 'sent'
-    );
-
-    const allUnreadIds = [
-      ...unreadLiveMessages.map(msg => msg.id),
-      ...(unreadApiMessages?.map(msg => msg.id) || [])
-    ];
-
-    if (allUnreadIds.length > 0) {
-      console.log('✓ Marking messages as read:', allUnreadIds);
-      dispatch(markMessagesRead(allUnreadIds));
-      
-      // Send read receipt via WebSocket if connected
-      if (chatWebsocket.isChatConnected()) {
-        chatWebsocket.sendReadReceipt(allUnreadIds);
-      }
+      console.log('🧹 Cleaning up chat WebSocket')
+      chatWebsocket.disconnectChat()
+      setIsTyping(false)
+      setConnectionStatus('disconnected')
     }
-  }, [liveMessages, messages, dispatch]);
+  }, [conversation?.other_user?.username, userInfo?.access, profile])
 
+  /* ---------------------------
+     Normalize Messages (NO DUPES)
+  ----------------------------*/
+  const allMessages = useMemo(() => {
+    const map = new Map()
+
+    ;[...liveMessages, ...(messages?.results || [])].forEach(msg => {
+      map.set(msg.id, msg)
+    })
+
+    return Array.from(map.values())
+      .filter(msg => !msg.is_deleted)
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+  }, [messages, liveMessages])
+
+  /* ---------------------------
+     Mark Messages as Read
+  ----------------------------*/
+  useEffect(() => {
+    if (!profile?.id || allMessages.length === 0) return
+
+    const unreadIds = allMessages
+      .filter(
+        msg =>
+          msg.sender_id !== profile.user.id &&
+          (msg.status === 'sent' || msg.status === 'delivered')
+      )
+      .map(msg => msg.id)
+
+    if (unreadIds.length === 0) return
+
+    console.log('✓ Marking messages as read:', unreadIds)
+    dispatch(markMessagesRead(unreadIds))
+
+    if (chatWebsocket.isChatConnected()) {
+      chatWebsocket.sendReadReceipt(unreadIds)
+    }
+  }, [allMessages, profile?.id, dispatch])
+
+  /* ---------------------------
+     Scroll Helpers
+  ----------------------------*/
   const scrollToBottom = () => {
     setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  };
+      messagesEndRef.current?.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end'
+      })
+    }, 50)
+  }
 
-  const handleLoadMore = () => {
-    if (hasMore && !loading) {
-      const nextPage = page + 1;
-      dispatch(fetchMessages(conversation.id, nextPage)).then((result) => {
-        if (result.payload?.length === 0) {
-          setHasMore(false);
-        } else {
-          setPage(nextPage);
-        }
-      });
+  useEffect(scrollToBottom, [allMessages.length])
+
+  /* ---------------------------
+     Load Older Messages
+  ----------------------------*/
+  const handleLoadMore = async () => {
+    if (!hasMore || loading) return
+
+    prevScrollHeightRef.current = messageContainerRef.current?.scrollHeight || 0
+
+    const nextPage = page + 1
+    const result = await dispatch(fetchMessages(conversation.id, nextPage))
+
+    if (!result.payload?.length) {
+      setHasMore(false)
+    } else {
+      setPage(nextPage)
     }
-  };
 
-  const handleSendMessage = (text) => {
-    if (text.trim()) {
-      const tempId = Date.now().toString();
-      const tempMessage = {
-        id: tempId,
-        text: text.trim(),
-        sender: { id: 'me', username: 'You' },
-        status: 'sending',
-        created_at: new Date().toISOString(),
-        is_temp: true
-      };
-
-      setLiveMessages(prev => [...prev, tempMessage]);
-      
-      // Send via WebSocket
-      const sent = chatWebsocket.sendMessage(text.trim(), tempId);
-      if (!sent) {
-        console.error('❌ Failed to send message via WebSocket');
-        // Update message status to failed
-        setLiveMessages(prev => prev.map(msg => 
-          msg.id === tempId ? { ...msg, status: 'failed' } : msg
-        ));
+    setTimeout(() => {
+      const container = messageContainerRef.current
+      if (container) {
+        container.scrollTop = container.scrollHeight - prevScrollHeightRef.current
       }
-      
-      scrollToBottom();
+    }, 0)
+  }
+
+  /* ---------------------------
+     Send Message (Optimistic)
+  ----------------------------*/
+  const handleSendMessage = text => {
+    if (!text.trim() || !profile) {
+      console.error('❌ Cannot send message: no profile or empty text')
+      return
     }
-  };
 
-  const handleTyping = (isTyping) => {
-    chatWebsocket.sendTyping(isTyping);
-  };
+    const tempId = `temp-${Date.now()}`
+    const tempMessage = {
+      id: tempId,
+      text: text.trim(),
+      sender_id: profile.user.id, 
+      sender: {
+        id: profile.user.id,
+        username: profile.user.username
+      },
+      status: 'sending',
+      created_at: new Date().toISOString(),
+      is_temp: true,
+    }
 
-  const apiMessages = messages?.results || [];
-  const allMessages = [...apiMessages, ...liveMessages]
-    .filter(msg => !msg.is_deleted) // Filter out deleted messages
-    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // Sort by date
+    console.log('📤 Sending message (optimistic):', tempId, 'from:', profile.user.username)
+    setLiveMessages(prev => [...prev, tempMessage])
+
+    const sent = chatWebsocket.sendMessage(text.trim(), tempId)
+
+    if (!sent) {
+      console.error('❌ Failed to send message via WebSocket')
+      setLiveMessages(prev =>
+        prev.map(msg =>
+          msg.id === tempId ? { ...msg, status: 'failed' } : msg
+        )
+      )
+    }
+  }
+
+  const handleTyping = isTyping => {
+    if (!chatWebsocket.isChatConnected()) {
+      console.error('❌ Cannot send typing: WebSocket not connected')
+      return
+    }
+    
+    console.log('⌨️ Sending typing indicator:', isTyping)
+    chatWebsocket.sendTyping(isTyping)
+  }
+
+  /* ---------------------------
+     Determine if message is own
+     FIXED: Now uses profile.username properly
+  ----------------------------*/
+  const getIsOwn = (message) => {
+    if (!message || !profile?.user?.id) {
+      console.log('🔍 Cannot determine isOwn - missing data:', {
+        hasMessage: !!message,
+        hasProfileUserId: !!profile?.user?.id,
+        messageSenderId: message?.sender_id,
+        messageSenderUsername: message?.sender?.username
+      })
+      return false
+    }
+  
+    // Primary: use sender_id (available in REST messages)
+    if (message.sender_id) {
+      const isOwn = message.sender_id === profile.user.id
+      // Optional debug log (remove later if too noisy)
+      // console.log('✅ isOwn via sender_id:', isOwn, message.id)
+      return isOwn
+    }
+  
+    // Fallback: use nested sender.username (for WebSocket or optimistic messages)
+    if (message.sender?.username) {
+      return message.sender.username === profile.user.username
+    }
+  
+    // Final fallback: use sender.id if available
+    if (message.sender?.id) {
+      return message.sender.id === profile.user.id
+    }
+  
+    return false
+  }
+  /* ---------------------------
+     UI Rendering
+  ----------------------------*/
+  const renderMessages = () => {
+    console.log('🔄 Rendering messages, profile.username:', profile?.user.username)
+    
+    if (profileLoading || !profile) {
+      return (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8B5CF6] mx-auto mb-4"></div>
+          <p className="text-[#6B7280] font-light">Loading profile...</p>
+        </div>
+      )
+    }
+
+    return allMessages.map((message, index) => {
+      const isOwn = getIsOwn(message)
+      
+      return (
+        <ChatMessage 
+          key={message.id || `temp-${index}`} 
+          message={message} 
+          isOwn={isOwn}
+        />
+      )
+    })
+  }
 
   return (
     <div className='bg-white rounded-2xl shadow-lg border border-[#f0f0f0] h-[calc(100vh-12rem)] flex flex-col'>
@@ -262,13 +380,7 @@ const ChatWindow = ({ conversation }) => {
                 <p className="text-[#6B7280] font-light">Send a message to start the conversation</p>
               </div>
             ) : (
-              allMessages.map((message, index) => (
-                <ChatMessage 
-                  key={message.id || `temp-${index}`} 
-                  message={message} 
-                  isOwn={message.sender?.id === 'me' || message.sender?.username === userInfo?.username}
-                />
-              ))
+              renderMessages()
             )}
 
             {isTyping && (
@@ -294,7 +406,8 @@ const ChatWindow = ({ conversation }) => {
       <ChatInput 
         onSendMessage={handleSendMessage}
         onTyping={handleTyping}
-        isConnected={connectionStatus === 'connected'}
+        isConnected={connectionStatus === 'connected' && !!profile}
+        isLoadingProfile={!profile}
       />
     </div>
   )
